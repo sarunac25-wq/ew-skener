@@ -104,6 +104,7 @@ svg.mini{width:100%;height:auto;display:block;margin-top:8px}
 .mini-up{fill:var(--up);opacity:.75}.mini-dn{fill:var(--down);opacity:.75}
 .mini-lbl{fill:var(--accent);font:700 10px system-ui,sans-serif}
 .mini-div{stroke:var(--warn);stroke-width:1.2;stroke-dasharray:4 3}
+.tvtf{display:inline-block;margin-top:6px;font-size:13px;font-weight:600}
 ul.divs{margin:8px 0 0;padding-left:18px;font-size:13px;display:grid;gap:4px}
 textarea.copy{width:100%;min-height:70px;margin-top:8px;font:12px ui-monospace,Menlo,monospace;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px}
 </style>
@@ -475,10 +476,12 @@ const tvSym = s => `BYBIT:${s}.P`;
 const IS_ANDROID = /Android/i.test(navigator.userAgent);
 const TV_PKG = 'com.tradingview.tradingviewapp';
 let tvMode = LS.get('tvMode', IS_ANDROID ? 'app-chart' : 'web');
-const tvWebChart = s => `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSym(s))}`;
+// interval: 1, 3, 5, 15, 30, 60, 120, 240, 360, 720, D (isto kao Bybit)
+const tvWebChart = (s, tf) => `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSym(s))}` + (tf && TFIV[tf] ? `&interval=${TFIV[tf]}` : '');
 const tvWebSymbol = s => `https://www.tradingview.com/symbols/BYBIT-${encodeURIComponent(s)}.P/`;
 const tvIntent = web => `intent://${web.replace(/^https:\/\//, '')}#Intent;scheme=https;package=${TV_PKG};S.browser_fallback_url=${encodeURIComponent(web)};end`;
-function tvLink(s){
+function tvLink(s, tf){
+  if(tf){ return (!IS_ANDROID || tvMode === 'web') ? tvWebChart(s, tf) : tvIntent(tvWebChart(s, tf)); }   // sa TF-om uvek grafik
   if(!IS_ANDROID || tvMode === 'web') return tvWebChart(s);
   return tvIntent(tvMode === 'app-symbol' ? tvWebSymbol(s) : tvWebChart(s));
 }
@@ -512,7 +515,7 @@ function card(c){
   const m = (l, v, cl='', key=false) => `<div class="${key ? 'key' : ''}"><span>${l}</span><b class="${cl}">${v}</b></div>`;
   return `<div class="coin">
     <div class="top">
-      <a class="sym" href="${esc(tvLink(c.sym))}" target="${tvTarget()}" rel="noopener">${esc(c.sym)}.P</a>
+      <a class="sym" href="${esc(tvLink(c.sym, cardTf(c)))}" target="${tvTarget()}" rel="noopener">${esc(c.sym)}.P</a>
       <span class="pill ${ic}">${esc(it)}</span>
       ${ext ? '<span class="pill warn">ekstreman funding</span>' : ''}
     </div>
@@ -528,7 +531,7 @@ function card(c){
       ${m('Promet 24h', fm(c.turn))}
     </div>
     ${c.ew ? ewoBlock(c) : ''}
-    <div class="links"><a href="${esc(tvLink(c.sym))}" target="${tvTarget()}" rel="noopener">TradingView</a><a href="${bbLink(c.sym)}" target="_blank" rel="noopener">Bybit</a></div>
+    <div class="links"><a href="${esc(tvLink(c.sym, cardTf(c)))}" target="${tvTarget()}" rel="noopener">TradingView${cardTf(c) ? ' ' + esc(cardTf(c)) : ''}</a><a href="${bbLink(c.sym)}" target="_blank" rel="noopener">Bybit</a></div>
   </div>`;
 }
 function agoTxt(n){
@@ -536,16 +539,23 @@ function agoTxt(n){
   const t = n % 100, u = n % 10;
   return `pre ${n} ${(u >= 1 && u <= 4 && !(t >= 11 && t <= 14)) ? 'sveće' : 'sveća'}`;
 }
-const TF_PICK = {};                                     // izabrani TF za mini grafik, po coinu
+const TF_PICK = {};
+function cardTf(c){                                     // TF izabran na kartici: dodir, pa TF divergencije, pa 1h ili prvi skenirani
+  if(!c.ew || !R) return null;
+  const has = t => c.ew[t] && R.tfs.includes(t);
+  if(TF_PICK[c.sym] && has(TF_PICK[c.sym])) return TF_PICK[c.sym];
+  const d = c.div.find(x => has(x.tf)); if(d) return d.tf;
+  return has('1h') ? '1h' : R.tfs.find(has) || null;
+}                                     // izabrani TF za mini grafik, po coinu
 const DIR_TXT = {bear:'Medveđa divergencija (kraj talasa 5 nagore)', bull:'Bikovska divergencija (kraj talasa 5 nadole)'};
 function ewoBlock(c){
-  const tf = TF_PICK[c.sym] || (c.div.length ? c.div[0].tf : '1h');
+  const tf = cardTf(c);
   const btns = R.tfs.filter(t => c.ew[t]).map(t => {
     const v = c.ew[t][c.ew[t].length-1], d = c.div.find(x => x.tf === t);
     return `<button class="tfb" data-sym="${esc(c.sym)}" data-tf="${t}" aria-pressed="${t === tf}">${t}${d ? (d.dir === 'bear' ? ' ↓' : ' ↑') : ''}<b class="${cls(v)}">${esc(fp(v))}</b></button>`;
   }).join('');
-  const divs = c.div.map(d => `<li><b class="${d.dir === 'bear' ? 'neg' : 'pos'}">${d.tf}</b> ${DIR_TXT[d.dir]}: cena ${esc(fp(d.p5))} ${d.dir === 'bear' ? '>' : '<'} talas 3 ${esc(fp(d.p3))}, EWO ${Math.round(d.ratio*100)}% vrha talasa 3, ${agoTxt(d.age)}${d.now < 0 ? ' (EWO je već prešao nulu)' : ''}</li>`).join('');
-  return `<div class="ewo"><div class="small muted">EWO_LB (5, 35)</div><div class="tfbs">${btns}</div>${miniChart(c, tf)}${divs ? `<ul class="divs">${divs}</ul>` : ''}</div>`;
+  const divs = c.div.map(d => `<li><a class="${d.dir === 'bear' ? 'neg' : 'pos'}" style="font-weight:700" href="${esc(tvLink(c.sym, d.tf))}" target="${tvTarget()}" rel="noopener">${d.tf}</a> ${DIR_TXT[d.dir]}: cena ${esc(fp(d.p5))} ${d.dir === 'bear' ? '>' : '<'} talas 3 ${esc(fp(d.p3))}, EWO ${Math.round(d.ratio*100)}% vrha talasa 3, ${agoTxt(d.age)}${d.now < 0 ? ' (EWO je već prešao nulu)' : ''}</li>`).join('');
+  return `<div class="ewo"><div class="small muted">EWO_LB (5, 35)</div><div class="tfbs">${btns}</div>${miniChart(c, tf)}<a class="tvtf" href="${esc(tvLink(c.sym, tf))}" target="${tvTarget()}" rel="noopener">Otvori ${esc(tf)} grafik u TradingView-u</a>${divs ? `<ul class="divs">${divs}</ul>` : ''}</div>`;
 }
 function miniChart(c, tf){
   const k = c.k[tf], ew = c.ew[tf]; if(!k) return '';
@@ -582,12 +592,12 @@ function render(){
   $('#rejInfo').textContent = `Odbijeno: likvidnost ${R.rej.likvidnost}, mlađi od ${S.minAgeDays} dana ${R.rej.novi}, delisting ${R.rej.delisting}, ručno ${R.rej.iskljuceno}. OI i promet su samo sa Bybita.`;
   $('#fresh').innerHTML = R.fresh && R.fresh.length
     ? `<b>Nove divergencije (${R.fresh.length})</b>` + R.tfs.filter(tf => R.fresh.some(f => f.d.tf === tf)).map(tf =>
-        `<div class="ftf"><span class="pill warn">${esc(tf)}</span> ${R.fresh.filter(f => f.d.tf === tf).map(f => `<a href="${esc(tvLink(f.c.sym))}" target="${tvTarget()}" rel="noopener">${esc(f.c.sym)}.P</a> ${f.d.dir === 'bear' ? '↓' : '↑'}`).join(' · ')}</div>`).join('')
+        `<div class="ftf"><span class="pill warn">${esc(tf)}</span> ${R.fresh.filter(f => f.d.tf === tf).map(f => `<a href="${esc(tvLink(f.c.sym, f.d.tf))}" target="${tvTarget()}" rel="noopener">${esc(f.c.sym)}.P</a> ${f.d.dir === 'bear' ? '↓' : '↑'}`).join(' · ')}</div>`).join('')
     : '';
   // sve aktivne divergencije po TF-u (i one koje nisu nove)
   const byTf = R.tfs.map(tf => [tf, R.sets.div.flatMap(c => c.div.filter(d => d.tf === tf).map(d => ({c, d})))]);
   $('#divTf').innerHTML = R.sets.div.length ? byTf.map(([tf, arr]) => `<div class="dtrow"><b>${esc(tf)}</b><span>${arr.length
-      ? arr.map(x => `<a href="${esc(tvLink(x.c.sym))}" target="${tvTarget()}" rel="noopener">${esc(x.c.sym)}.P</a> <span class="${x.d.dir === 'bear' ? 'neg' : 'pos'}">${x.d.dir === 'bear' ? '↓' : '↑'}</span>`).join(' · ')
+      ? arr.map(x => `<a href="${esc(tvLink(x.c.sym, x.d.tf))}" target="${tvTarget()}" rel="noopener">${esc(x.c.sym)}.P</a> <span class="${x.d.dir === 'bear' ? 'neg' : 'pos'}">${x.d.dir === 'bear' ? '↓' : '↑'}</span>`).join(' · ')
       : '<span class="muted">nema</span>'}</span></div>`).join('') : '<div class="muted small">Nema aktivnih divergencija.</div>';
   const list = current();
   $('#list').innerHTML = list.length ? list.map(card).join('') : '<div class="empty">Nema coinova u ovoj grupi.</div>';
