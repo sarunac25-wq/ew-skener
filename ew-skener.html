@@ -73,7 +73,7 @@ td{border-bottom:1px solid var(--border);padding:6px 8px;white-space:nowrap}
 td.r,th.r{text-align:right}
 .setup{border:1px solid var(--border);border-radius:12px;padding:12px;margin-top:12px;background:var(--surface)}
 .setup .top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.setup .sym{font-size:16px;font-weight:700}
+.setup .sym{font-size:16px;font-weight:700;overflow-wrap:anywhere}
 .setup .score{margin-left:auto;font-weight:600}
 .setup svg{width:100%;height:auto;display:block;margin-top:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px}
 ul.checks{list-style:none;margin:6px 0;padding:0;display:grid;gap:3px}
@@ -180,7 +180,7 @@ a{color:var(--accent)}
     <section class="card">
       <h2>Aktivnost <span class="step">koraci 3–4</span> <span class="muted small" id="actInfo"></span></h2>
       <div class="tablewrap"><table id="actTable"><thead></thead><tbody><tr><td class="empty">—</td></tr></tbody></table></div>
-      <p class="small muted" style="margin:8px 0 0">OI i promet su samo sa Bybita (stroži uslov od Coinalyze zbira). Pravi OI = promena OI − promena cene, za 4h.</p>
+      <p class="small muted" style="margin:8px 0 0">Samo Bybit USDT perpetual ugovori (USDT.P). OI i promet su samo sa Bybita (stroži uslov od Coinalyze zbira). Pravi OI = promena OI − promena cene, za 4h.</p>
     </section>
 
     <section class="card">
@@ -898,7 +898,7 @@ function candCard(coin, tf, cand){
   const uslovi = cand.checks.filter(x => x.k === 'uslov'), bodovi = cand.checks.filter(x => x.k === 'bod'), info = cand.checks.filter(x => x.k === 'info');
   return `<div class="setup">
     <div class="top">
-      <span class="sym">${esc(coin.sym.replace('USDT',''))}</span>
+      <span class="sym">${esc(coin.sym + '.P')}</span>
       <span class="pill ${cand.dir === 'LONG' ? 'long' : 'short'}">${cand.dir}</span>
       <span>${esc(SETUP_NAME[cand.setup])} · ${esc(tf)}</span>
       <span class="score">${cand.points}/5 → ${esc(riskTxt)}</span>
@@ -942,7 +942,7 @@ function renderAll(){
   const describe = list => list.length ? list.map(c => `${SETUP_NAME[c.setup].split(' — ')[1]} (${c.dir}, ${c.phase})`).join('; ') : 'nema jasne strukture';
   $('#btcBox').className = '';
   $('#btcBox').innerHTML = `
-    <div class="row"><b style="font-size:16px">BTC ${esc(fp(b.price))}</b><span class="pill ${b.bias === 'LONG' ? 'long' : 'short'}">Prednost: ${b.bias === 'LONG' ? 'longovi' : 'shortovi'}</span></div>
+    <div class="row"><b style="font-size:16px">BTCUSDT.P ${esc(fp(b.price))}</b><span class="pill ${b.bias === 'LONG' ? 'long' : 'short'}">Prednost: ${b.bias === 'LONG' ? 'longovi' : 'shortovi'}</span></div>
     <div class="kv">
       <div><span>EWO 1h</span><b class="${cls(b.e1)}">${b.e1.toFixed(2)}</b></div>
       <div><span>EWO 4h</span><b class="${cls(b.e4)}">${b.e4.toFixed(2)}</b></div>
@@ -974,7 +974,7 @@ function renderAll(){
   A.sort((a,b) => b.cand.points - a.cand.points);
   $('#aCount').textContent = `(${A.length})`;
   $('#aList').innerHTML = (blocked && A.length ? `<div class="banner bad small" style="margin-top:10px">Danas ne trguješ (vidi upozorenja). Predlozi su samo za učenje.</div>` : '') +
-    (A.length ? A.map(x => candCard(x.coin, x.tf, x.cand) + (x.others.length ? `<p class="small muted">Još za ${esc(x.coin.sym)}: ${x.others.map(o => esc(SETUP_NAME[o.cand.setup]) + ' ' + esc(o.tf)).join(', ')}</p>` : '')).join('')
+    (A.length ? A.map(x => candCard(x.coin, x.tf, x.cand) + (x.others.length ? `<p class="small muted">Još za ${esc(x.coin.sym + '.P')}: ${x.others.map(o => esc(SETUP_NAME[o.cand.setup]) + ' ' + esc(o.tf)).join(', ')}</p>` : '')).join('')
               : '<div class="empty">Nema A setupa. Bez jasnog counta nema trejda.</div>');
 
   const reason = cand => {
@@ -987,8 +987,8 @@ function renderAll(){
   $('#bList').innerHTML = (B.length ? B.map(x => {
     const r = reason(x.cand);
     const pill = x.cand.phase === 'A' ? '<span class="pill x">odbačen</span>' : '<span class="pill b">B</span>';
-    return `<div class="item">${pill}<b>${esc(x.coin.sym.replace('USDT',''))}</b><span class="pill ${x.cand.dir === 'LONG' ? 'long' : 'short'}">${x.cand.dir}</span><span class="small">${esc(SETUP_NAME[x.cand.setup])} · ${esc(x.tf)}</span><span class="small muted" style="flex-basis:100%">${esc(x.cand.status)}${r ? ' — ' + esc(r) : ''}</span></div>`;
-  }).join('') : '<div class="empty">—</div>') + (C.length ? `<p class="small muted" style="margin:8px 0 0">C (bez jasne strukture, izbačeni): ${C.map(c => esc(c.sym.replace('USDT',''))).join(', ')}</p>` : '');
+    return `<div class="item">${pill}<b>${esc(x.coin.sym + '.P')}</b><span class="pill ${x.cand.dir === 'LONG' ? 'long' : 'short'}">${x.cand.dir}</span><span class="small">${esc(SETUP_NAME[x.cand.setup])} · ${esc(x.tf)}</span><span class="small muted" style="flex-basis:100%">${esc(x.cand.status)}${r ? ' — ' + esc(r) : ''}</span></div>`;
+  }).join('') : '<div class="empty">—</div>') + (C.length ? `<p class="small muted" style="margin:8px 0 0">C (bez jasne strukture, izbačeni): ${C.map(c => esc(c.sym + '.P')).join(', ')}</p>` : '');
 
   // tabela aktivnosti
   $('#actInfo').textContent = `prag ${thr}% · likvidnih ${total} · odbijeno: likvidnost ${rej.likvidnost}, novi ${rej.starost}, delisting ${rej.delisting}, ručno ${rej.iskljuceno}`;
@@ -996,7 +996,7 @@ function renderAll(){
   $('#actTable thead').innerHTML = '<tr>' + th.map((t,i) => `<th class="${i >= 2 && i <= 8 ? 'r' : ''}">${t}</th>`).join('') + '</tr>';
   const rows = [...sel].sort((a,b) => ({A:0,B:1,C:2}[a.cls] - {A:0,B:1,C:2}[b.cls]) || Math.abs(b.trueOI || 0) - Math.abs(a.trueOI || 0));
   $('#actTable tbody').innerHTML = rows.map(c => `<tr>
-    <td><a href="${tvLink(c.sym)}" target="_blank" rel="noopener">${esc(c.sym.replace('USDT',''))}</a></td>
+    <td><a href="${tvLink(c.sym)}" target="_blank" rel="noopener">${esc(c.sym + '.P')}</a></td>
     <td>${(c.src || []).map(s => `<span class="tag">${esc(s)}</span>`).join('')}</td>
     <td class="r ${cls(c.ch24)}">${fpc(c.ch24)}</td>
     <td class="r ${cls(c.px4)}">${fpc(c.px4)}</td>
