@@ -84,6 +84,20 @@ a{color:var(--accent)}
 details summary{cursor:pointer;font-weight:650}
 .settings{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:12px}
 .settings label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+.fresh{background:var(--warnbg);color:var(--warn);border-radius:10px;padding:10px 12px;font-size:14px}
+.fresh:empty{display:none}
+.ewo{margin-top:10px;border-top:1px solid var(--border);padding-top:8px}
+.tfbs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:6px}
+.tfb{padding:5px 6px;font-size:12px;font-weight:600;text-align:left;min-width:0}
+.tfb b{display:block;font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.tfb[aria-pressed="true"]{border-color:var(--accent);outline:1px solid var(--accent)}
+svg.mini{width:100%;height:auto;display:block;margin-top:8px}
+.mini-px{fill:none;stroke:var(--text);stroke-width:1.2;opacity:.8}
+.mini-zero{stroke:var(--border)}
+.mini-up{fill:var(--up);opacity:.75}.mini-dn{fill:var(--down);opacity:.75}
+.mini-lbl{fill:var(--accent);font:700 10px system-ui,sans-serif}
+.mini-div{stroke:var(--warn);stroke-width:1.2;stroke-dasharray:4 3}
+ul.divs{margin:8px 0 0;padding-left:18px;font-size:13px;display:grid;gap:4px}
 textarea.copy{width:100%;min-height:70px;margin-top:8px;font:12px ui-monospace,Menlo,monospace;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px}
 </style>
 </head>
@@ -105,6 +119,7 @@ textarea.copy{width:100%;min-height:70px;margin-top:8px;font:12px ui-monospace,M
 
 <main class="wrap">
   <div class="err" id="err" role="alert"></div>
+  <div class="fresh" id="fresh" role="status"></div>
 
   <section class="card">
     <div class="stats" id="stats">
@@ -145,7 +160,7 @@ textarea.copy{width:100%;min-height:70px;margin-top:8px;font:12px ui-monospace,M
       </select>
     </div>
     <div class="coins" id="list"><div class="empty">Još nije skenirano.</div></div>
-    <p class="small muted" style="margin:12px 0 0">Pravi OI = promena OI − promena cene, za 4h. Tumačenje gleda smer cene i OI za 4h: novi longovi, novi shortovi, zatvaranje shortova ili zatvaranje longova.</p>
+    <p class="small muted" style="margin:12px 0 0">EWO_LB = EMA(5) − EMA(35) od cene zatvaranja. Divergencija: najjači EWO je talas 3, EWO se vrati do nule (talas 4), pa cena napravi nov vrh ili dno uz niži EWO (talas 5). Strelica ↓ = medveđa, ↑ = bikovska. Pravi OI = promena OI − promena cene, za 4h. Tumačenje gleda smer cene i OI za 4h: novi longovi, novi shortovi, zatvaranje shortova ili zatvaranje longova.</p>
   </section>
 
   <section class="card">
@@ -188,6 +203,9 @@ const SCHEMA = [
   {k:'keepMax', l:'Najviše coinova na listi', d:15, step:1},
   {k:'topMovers', l:'Najveći rast i pad 24h (po N)', d:3, step:1},
   {k:'fundingExt', l:'Ekstreman funding (% / 8h)', d:0.05, step:0.005},
+  {k:'divAll', l:'Divergencije i za sve likvidne (1 = da, 0 = samo lista)', d:0, step:1},
+  {k:'divMaxAge', l:'Divergencija važi najviše (sveća)', d:12, step:1},
+  {k:'divMaxRatio', l:'EWO talasa 5 najviše (% vrha talasa 3)', d:90, step:5},
   {k:'always', l:'Uvek na listi', d:'BTC, ETH', text:true},
   {k:'apiBase', l:'API adresa (prazno = auto)', d:'', text:true},
 ];
@@ -267,6 +285,54 @@ async function instruments(){
 }
 function symList(str){ return (str || '').split(/[,;\s]+/).map(s => s.trim().toUpperCase().replace(/\.P$/, '')).filter(Boolean).map(s => s.endsWith('USDT') ? s : s + 'USDT'); }
 
+/* ---------- EWO_LB (LazyBear): EMA(close, 5) − EMA(close, 35) ---------- */
+const DIV_TFS = ['4h', '1h', '15m', '5m'], TFIV = {'4h':'240', '1h':'60', '15m':'15', '5m':'5'};
+async function klines(sym, interval, limit){
+  const r = await api('/v5/market/kline', {category:'linear', symbol:sym, interval, limit});
+  return (r.list || []).map(x => ({t:+x[0], o:+x[1], h:+x[2], l:+x[3], c:+x[4]})).reverse();
+}
+function ema(x, n){ const o = Array(x.length).fill(null); if(x.length < n) return o; let s = 0; for(let i = 0; i < n; i++) s += x[i]; let e = s/n; o[n-1] = e; const a = 2/(n+1); for(let i = n; i < x.length; i++){ e = a*x[i] + (1-a)*e; o[i] = e; } return o; }
+function ewoLB(k){ const cl = k.map(b => b.c), a = ema(cl, 5), b = ema(cl, 35); return cl.map((_, i) => b[i] == null ? null : a[i] - b[i]); }
+
+/* Divergencija po EWO metodi:
+   talas 3 = najjači EWO u prozoru, talas 4 = EWO se vrati do nule,
+   talas 5 = cena pravi nov ekstrem iznad talasa 3, a EWO je niži. */
+function detectDiv(k, ew){
+  const L = k.length - 1, from = Math.max(40, L - 200), out = [];
+  const absv = ew.slice(from).filter(v => v != null).map(Math.abs).sort((a,b) => a-b);
+  const p80 = absv[Math.floor(absv.length*0.8)] || Infinity;
+  for(const sg of [1, -1]){                                  // 1: uzlazni impuls → medveđa divergencija
+    const e = i => ew[i] == null ? null : ew[i]*sg;
+    const px = i => sg > 0 ? k[i].h : -k[i].l;
+    let i3 = -1, m = 0;
+    for(let i = from; i <= L; i++){ const v = e(i); if(v != null && v > m){ m = v; i3 = i; } }
+    if(i3 < 0 || i3 > L - 6 || m < p80) continue;           // talas 3 mora biti jak i završen
+    let i4 = -1, mn = Infinity;
+    for(let i = i3 + 1; i <= L; i++){ const v = e(i); if(v != null && v < mn){ mn = v; i4 = i; } }
+    if(i4 < 0 || !(mn <= 0.15*m)) continue;                   // talas 4: EWO se vratio do nule
+    let p3 = -Infinity, j3 = i3; for(let i = i3; i <= i4; i++) if(px(i) > p3){ p3 = px(i); j3 = i; }
+    let p5 = -Infinity, i5 = -1; for(let i = i4 + 1; i <= L; i++) if(px(i) > p5){ p5 = px(i); i5 = i; }
+    if(i5 < 0 || !(p5 > p3)) continue;                        // talas 5: nov ekstrem cene
+    let e5 = -Infinity; for(let i = i4 + 1; i <= L; i++){ const v = e(i); if(v != null && v > e5) e5 = v; }
+    if(!(e5 > 0)) continue;                                   // EWO u talasu 5 iznad nule, ali niži od talasa 3
+    out.push({dir: sg > 0 ? 'bear' : 'bull', i3, j3, i4, i5, p3: p3*sg, p5: p5*sg, e3: m*sg, e5: e5*sg, ratio: e5/m, age: L - i5,
+              t3: k[i3].t, t5: k[i5].t, now: (ew[L] || 0)*sg});
+  }
+  return out;
+}
+
+/* ---------- upozorenja dok je stranica otvorena ---------- */
+function divKey(sym, d){ return `${sym}|${d.tf}|${d.dir}|${d.t3}`; }
+function beep(){
+  try{
+    const C = window.AudioContext || window.webkitAudioContext; if(!C) return;
+    const ac = new C(), o = ac.createOscillator(), g = ac.createGain();
+    o.frequency.value = 880; g.gain.setValueAtTime(0.15, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.6);
+    o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + 0.6);
+  }catch(e){}
+  try{ navigator.vibrate && navigator.vibrate([200, 100, 200]); }catch(e){}
+}
+
 /* ---------- skeniranje: korak 3 (likvidnost) i korak 4 (aktivnost) ---------- */
 let R = null, scanning = false;
 const setStatus = t => { $('#status').textContent = t; };
@@ -306,7 +372,7 @@ async function scan(){
       const kl2 = (kl.list || []).map(x => ({t:+x[0], o:+x[1]}));
       if(kl2.length){ const k = kl2.reduce((a,b) => Math.abs(b.t - t4) < Math.abs(a.t - t4) ? b : a); if(k.o > 0) c.px4 = (c.price / k.o - 1)*100; }
       if(c.oi4 != null && c.px4 != null) c.trueOI = c.oi4 - c.px4;
-    }, (d, n) => setProg(0.1 + 0.9*d/n));
+    }, (d, n) => setProg(0.1 + 0.5*d/n));
 
     // prag OI: 5% → 8% ako ih je previše, 3% ako ih je manje od 5
     const withOI = coins.filter(c => c.oi4 != null);
@@ -327,7 +393,28 @@ async function scan(){
     gain.slice(0, S.topMovers).forEach(add); loss.slice(0, S.topMovers).forEach(add);
     for(const s of symList(S.always)){ const c = bySym[s]; if(c){ if(!c.tags.includes('uvek')) c.tags.push('uvek'); add(c); } }
 
-    R = {at: new Date(), thr, coins, rej, sets: {lista: list, oiUp, oiDown, gain, loss, svi: coins}};
+    // EWO_LB i divergencije 3–5 na 4h, 1h, 15m i 5m
+    const targets = S.divAll >= 1 ? coins : list;
+    setStatus(`EWO i divergencije za ${targets.length} coinova (4h, 1h, 15m, 5m)…`);
+    await pool(targets, 6, async c => {
+      c.k = {}; c.ew = {}; c.div = [];
+      for(const tf of DIV_TFS){
+        const k = await klines(c.sym, TFIV[tf], 300);
+        if(k.length < 80) continue;
+        const ew = ewoLB(k); c.k[tf] = k; c.ew[tf] = ew;
+        for(const d of detectDiv(k, ew)) if(d.age <= S.divMaxAge && d.ratio*100 <= S.divMaxRatio){ d.tf = tf; c.div.push(d); }
+      }
+    }, (d, n) => setProg(0.6 + 0.4*d/n));
+    const divCoins = coins.filter(c => c.div && c.div.length);
+    for(const c of divCoins){ const dirs = [...new Set(c.div.map(d => d.dir))]; dirs.forEach(dr => c.tags.push(dr === 'bear' ? 'div ↓' : 'div ↑')); }
+    // nove divergencije od prošlog skeniranja
+    const seen = LS.get('seenDiv', {}), nowT = Date.now(), fresh = [];
+    for(const c of divCoins) for(const d of c.div){ const key = divKey(c.sym, d); if(!seen[key]){ fresh.push({c, d}); } seen[key] = seen[key] || nowT; }
+    for(const k2 of Object.keys(seen)) if(nowT - seen[k2] > 3*864e5) delete seen[k2];
+    LS.set('seenDiv', seen);
+
+    R = {at: new Date(), thr, coins, rej, fresh, sets: {lista: list, div: divCoins, oiUp, oiDown, gain, loss, svi: coins}};
+    if(fresh.length) beep();
     render();
     setStatus(`Skenirano u ${R.at.toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'})}. Likvidnih ${coins.length}, prag OI ${thr}%.`);
   }catch(e){
@@ -338,7 +425,7 @@ async function scan(){
 }
 
 /* ---------- prikaz ---------- */
-const FILTERS = [['lista','Lista za danas'], ['oiUp','OI raste'], ['oiDown','OI pada'], ['gain','Rast 24h'], ['loss','Pad 24h'], ['svi','Svi likvidni']];
+const FILTERS = [['lista','Lista za danas'], ['div','Divergencija'], ['oiUp','OI raste'], ['oiDown','OI pada'], ['gain','Rast 24h'], ['loss','Pad 24h'], ['svi','Svi likvidni']];
 let filter = LS.get('filter', 'lista'), sortKey = LS.get('sort', 'trueOI');
 if(!FILTERS.some(f => f[0] === filter)) filter = 'lista';
 $('#sort').value = sortKey;
@@ -405,9 +492,50 @@ function card(c){
       ${m('OI $', fm(c.oiv))}
       ${m('Promet 24h', fm(c.turn))}
     </div>
+    ${c.ew ? ewoBlock(c) : ''}
     <div class="links"><a href="${esc(tvLink(c.sym))}" target="${tvTarget()}" rel="noopener">TradingView</a><a href="${bbLink(c.sym)}" target="_blank" rel="noopener">Bybit</a></div>
   </div>`;
 }
+function agoTxt(n){
+  if(n === 0) return 'na poslednjoj sveći';
+  const t = n % 100, u = n % 10;
+  return `pre ${n} ${(u >= 1 && u <= 4 && !(t >= 11 && t <= 14)) ? 'sveće' : 'sveća'}`;
+}
+const TF_PICK = {};                                     // izabrani TF za mini grafik, po coinu
+const DIR_TXT = {bear:'Medveđa divergencija (kraj talasa 5 nagore)', bull:'Bikovska divergencija (kraj talasa 5 nadole)'};
+function ewoBlock(c){
+  const tf = TF_PICK[c.sym] || (c.div.length ? c.div[0].tf : '1h');
+  const btns = DIV_TFS.filter(t => c.ew[t]).map(t => {
+    const v = c.ew[t][c.ew[t].length-1], d = c.div.find(x => x.tf === t);
+    return `<button class="tfb" data-sym="${esc(c.sym)}" data-tf="${t}" aria-pressed="${t === tf}">${t}${d ? (d.dir === 'bear' ? ' ↓' : ' ↑') : ''}<b class="${cls(v)}">${esc(fp(v))}</b></button>`;
+  }).join('');
+  const divs = c.div.map(d => `<li><b class="${d.dir === 'bear' ? 'neg' : 'pos'}">${d.tf}</b> ${DIR_TXT[d.dir]}: cena ${esc(fp(d.p5))} ${d.dir === 'bear' ? '>' : '<'} talas 3 ${esc(fp(d.p3))}, EWO ${Math.round(d.ratio*100)}% vrha talasa 3, ${agoTxt(d.age)}${d.now < 0 ? ' (EWO je već prešao nulu)' : ''}</li>`).join('');
+  return `<div class="ewo"><div class="small muted">EWO_LB (5, 35)</div><div class="tfbs">${btns}</div>${miniChart(c, tf)}${divs ? `<ul class="divs">${divs}</ul>` : ''}</div>`;
+}
+function miniChart(c, tf){
+  const k = c.k[tf], ew = c.ew[tf]; if(!k) return '';
+  const N = Math.min(120, k.length), from = k.length - N, W = 320, PH = 70, EH = 44, G = 6, pad = 3;
+  const bars = k.slice(from), lo = Math.min(...bars.map(b => b.l)), hi = Math.max(...bars.map(b => b.h));
+  const x = i => pad + (i - from + 0.5)*(W - 2*pad)/N, y = v => pad + (hi - v)/(hi - lo || 1)*(PH - 2*pad);
+  const ev = ew.slice(from), mx = Math.max(1e-12, ...ev.filter(v => v != null).map(Math.abs)), y0 = PH + G + EH/2, bw = Math.max(1, (W - 2*pad)/N*0.7);
+  let s = `<svg class="mini" viewBox="0 0 ${W} ${PH + G + EH}" role="img" aria-label="Cena i EWO ${tf}">`;
+  s += `<polyline class="mini-px" points="${bars.map((b, j) => x(from+j).toFixed(1) + ',' + y(b.c).toFixed(1)).join(' ')}"/>`;
+  s += `<line class="mini-zero" x1="${pad}" x2="${W-pad}" y1="${y0}" y2="${y0}"/>`;
+  ev.forEach((v, j) => { if(v == null) return; const h = v/mx*(EH/2 - 1); s += `<rect class="${v >= 0 ? 'mini-up' : 'mini-dn'}" x="${(x(from+j) - bw/2).toFixed(1)}" width="${bw.toFixed(1)}" y="${(h >= 0 ? y0 - h : y0).toFixed(1)}" height="${Math.abs(h).toFixed(1)}"/>`; });
+  for(const d of c.div.filter(d2 => d2.tf === tf)){
+    const bear = d.dir === 'bear';
+    for(const [i, p, ePos, lbl] of [[d.j3, d.p3, d.i3, '3'], [d.i5, d.p5, d.i5, '5']]){
+      if(i < from) continue;
+      s += `<text class="mini-lbl" x="${x(i).toFixed(1)}" y="${(bear ? y(p) - 3 : y(p) + 10).toFixed(1)}" text-anchor="middle">${lbl}</text>`;
+    }
+    if(d.j3 >= from) s += `<line class="mini-div" x1="${x(d.j3)}" y1="${y(d.p3)}" x2="${x(d.i5)}" y2="${y(d.p5)}"/>`;
+  }
+  return s + '</svg>';
+}
+$('#list').addEventListener('click', e => {
+  const b = e.target.closest('.tfb'); if(!b) return;
+  TF_PICK[b.dataset.sym] = b.dataset.tf; render();
+});
 function render(){
   renderFilters();
   $('#copyBox').hidden = true; $('#copyInfo').textContent = '';
@@ -417,6 +545,7 @@ function render(){
     [R.coins.length, 'likvidnih USDT.P'], [R.thr + '%', 'prag OI 4h'], [R.sets.lista.length, 'na listi za danas'], [rejTotal, 'odbijeno']
   ].map(([v, l]) => `<div><b>${esc(v)}</b><span>${esc(l)}</span></div>`).join('');
   $('#rejInfo').textContent = `Odbijeno: likvidnost ${R.rej.likvidnost}, mlađi od ${S.minAgeDays} dana ${R.rej.novi}, delisting ${R.rej.delisting}, ručno ${R.rej.iskljuceno}. OI i promet su samo sa Bybita.`;
+  $('#fresh').innerHTML = R.fresh && R.fresh.length ? `<b>Nove divergencije (${R.fresh.length}):</b> ` + R.fresh.map(f => `${esc(f.c.sym)}.P ${f.d.tf} ${f.d.dir === 'bear' ? '↓' : '↑'}`).join(' · ') : '';
   const list = current();
   $('#list').innerHTML = list.length ? list.map(card).join('') : '<div class="empty">Nema coinova u ovoj grupi.</div>';
 }
