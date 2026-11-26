@@ -753,7 +753,7 @@ function btcContext(k4, k1){
 let lastResult = null, scanning = false;
 function setStatus(t){ $('#status').textContent = t; }
 function setProg(f){ $('#prog').style.width = (f*100).toFixed(1) + '%'; }
-function symList(str){ return (str || '').split(/[,;\s]+/).map(s => s.trim().toUpperCase()).filter(Boolean).map(s => s.endsWith('USDT') ? s : s + 'USDT'); }
+function symList(str){ return (str || '').split(/[,;\s]+/).map(s => s.trim().toUpperCase().replace(/\.P$/, '')).filter(Boolean).map(s => s.endsWith('USDT') ? s : s + 'USDT'); }
 
 async function scan(){
   if(scanning) return; scanning = true; $('#scanBtn').disabled = true;
