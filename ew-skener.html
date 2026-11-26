@@ -2,123 +2,96 @@
 <html lang="sr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>EW Skener</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>USDT.P Skener</title>
 <style>
+/* Lista kartica: telefon prvo, na širem ekranu više kolona */
 :root{
-  --bg:#f5f6f8;--surface:#ffffff;--surface2:#eef1f4;--text:#14171c;--muted:#5b6470;--border:#dde2e8;
-  --accent:#2f5bd3;--long:#0f7d55;--short:#c4352b;--warn:#9a5b00;--warnbg:#fff4e0;--badbg:#fdeceb;--okbg:#e6f5ee;
-  --candle-up:#0f7d55;--candle-dn:#c4352b;--grid:#e7ebef;
+  --bg:#f4f6f8;--surface:#ffffff;--surface2:#edf0f4;--text:#14181d;--muted:#5a6470;--border:#dbe1e7;
+  --accent:#2d5bd0;--up:#0d7a52;--down:#c2352b;--warn:#985a00;--warnbg:#fff3df;--upbg:#e4f4ec;--downbg:#fbe9e7;
+  color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0e1115;--surface:#161a20;--surface2:#1d2229;--text:#e6e9ed;--muted:#97a1ad;--border:#2a3038;
-    --accent:#7ea2ff;--long:#3fcf93;--short:#ff6d63;--warn:#f0b24e;--warnbg:#2b2416;--badbg:#2e1a1a;--okbg:#142a21;
-    --candle-up:#3fcf93;--candle-dn:#ff6d63;--grid:#232930;
+    --bg:#0e1115;--surface:#161a20;--surface2:#1e232a;--text:#e6e9ed;--muted:#98a2ae;--border:#2a3038;
+    --accent:#7fa3ff;--up:#40cf93;--down:#ff6e64;--warn:#f0b24e;--warnbg:#2b2416;--upbg:#13291f;--downbg:#2e1a1a;
+    color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0e1115;--surface:#161a20;--surface2:#1d2229;--text:#e6e9ed;--muted:#97a1ad;--border:#2a3038;
-  --accent:#7ea2ff;--long:#3fcf93;--short:#ff6d63;--warn:#f0b24e;--warnbg:#2b2416;--badbg:#2e1a1a;--okbg:#142a21;
-  --candle-up:#3fcf93;--candle-dn:#ff6d63;--grid:#232930;
+  --bg:#0e1115;--surface:#161a20;--surface2:#1e232a;--text:#e6e9ed;--muted:#98a2ae;--border:#2a3038;
+  --accent:#7fa3ff;--up:#40cf93;--down:#ff6e64;--warn:#f0b24e;--warnbg:#2b2416;--upbg:#13291f;--downbg:#2e1a1a;
+  color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--text)}
-body{font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
-.num,td,.kv b{font-variant-numeric:tabular-nums}
-header{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--border)}
-.hwrap{max-width:1400px;margin:0 auto;padding:10px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+body{font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
+.num,.m b{font-variant-numeric:tabular-nums}
+header{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--border);padding-top:env(safe-area-inset-top,0px)}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.hrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding-block:10px}
 h1{font-size:17px;margin:0;font-weight:650;letter-spacing:-.01em}
-.status{color:var(--muted);font-size:13px;flex:1;min-width:180px}
+.status{color:var(--muted);font-size:13px;flex:1 1 100%;order:3}
+@media(min-width:700px){.status{flex:1 1 auto;order:0}}
 button,select,input{font:inherit;color:inherit}
-button{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;cursor:pointer}
+button{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;cursor:pointer}
 button:hover{border-color:var(--muted)}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
 button:disabled{opacity:.55;cursor:default}
-input[type=number],input[type=text],select{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 7px;min-width:0}
-main{max-width:1400px;margin:0 auto;padding:16px;display:grid;gap:16px;grid-template-columns:1fr}
-@media(min-width:1000px){main{grid-template-columns:330px minmax(0,1fr)}}
-.col{display:flex;flex-direction:column;gap:16px;min-width:0}
-section.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;min-width:0}
-h2{font-size:14px;margin:0 0 10px;font-weight:650;display:flex;align-items:center;gap:8px}
-h2 .step{font-size:11px;color:var(--muted);font-weight:500;border:1px solid var(--border);border-radius:99px;padding:1px 7px}
-h3{font-size:13px;margin:12px 0 6px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
-.muted{color:var(--muted)}
-.small{font-size:12px}
-label.chk{display:flex;gap:8px;align-items:flex-start;padding:4px 0;cursor:pointer}
-label.chk input{margin-top:3px}
-.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.banner{border-radius:10px;padding:10px 12px;margin:0 0 0;font-weight:500}
-.banner.bad{background:var(--badbg);color:var(--short);border:1px solid color-mix(in srgb,var(--short) 35%,transparent)}
-.banner.warn{background:var(--warnbg);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
-.banner.ok{background:var(--okbg);color:var(--long);border:1px solid color-mix(in srgb,var(--long) 35%,transparent)}
-#banners{display:flex;flex-direction:column;gap:8px}
-#banners:empty{display:none}
-.pill{display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 8px;letter-spacing:.03em}
-.pill.long{background:var(--okbg);color:var(--long)}
-.pill.short{background:var(--badbg);color:var(--short)}
-.pill.a{background:var(--okbg);color:var(--long)}
-.pill.b{background:var(--warnbg);color:var(--warn)}
-.pill.x{background:var(--surface2);color:var(--muted)}
-.tag{display:inline-block;font-size:11px;border:1px solid var(--border);border-radius:5px;padding:0 5px;margin-right:3px;color:var(--muted);white-space:nowrap}
-.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin:10px 0}
-.kv div{background:var(--surface2);border-radius:8px;padding:6px 9px}
-.kv span{display:block;font-size:11px;color:var(--muted)}
-.kv b{font-size:14px;font-weight:600}
-.pos{color:var(--long)}.neg{color:var(--short)}
-.tablewrap{overflow-x:auto;margin:0 -14px;padding:0 14px}
-table{border-collapse:collapse;width:100%;font-size:13px}
-th{text-align:left;font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid var(--border);padding:6px 8px;white-space:nowrap}
-td{border-bottom:1px solid var(--border);padding:6px 8px;white-space:nowrap}
-td.r,th.r{text-align:right}
-.setup{border:1px solid var(--border);border-radius:12px;padding:12px;margin-top:12px;background:var(--surface)}
-.setup .top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.setup .sym{font-size:16px;font-weight:700;overflow-wrap:anywhere}
-.setup .score{margin-left:auto;font-weight:600}
-.setup svg{width:100%;height:auto;display:block;margin-top:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px}
-ul.checks{list-style:none;margin:6px 0;padding:0;display:grid;gap:3px}
-ul.checks li{display:flex;gap:8px;align-items:flex-start;font-size:13px}
-ul.checks li .ic{width:18px;flex:none;text-align:center;font-weight:700}
-.ic.ok{color:var(--long)}.ic.no{color:var(--short)}.ic.q{color:var(--warn)}
-.grid2{display:grid;grid-template-columns:1fr;gap:4px 18px}
-@media(min-width:760px){.grid2{grid-template-columns:1fr 1fr}}
-details summary{cursor:pointer;font-weight:600}
-.settings{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-top:10px}
-.settings label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
-.blist .item{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;padding:7px 0;border-bottom:1px solid var(--border)}
-.blist .item:last-child{border-bottom:0}
-a{color:var(--accent)}
+select,input[type=number],input[type=text]{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 9px;min-width:0}
 .prog{height:3px;background:var(--accent);width:0;transition:width .2s}
-.empty{color:var(--muted);padding:8px 0}
-.daystats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}
-.daystats div{background:var(--surface2);border-radius:8px;padding:6px;text-align:center}
-.daystats b{display:block;font-size:16px}
-.daystats span{font-size:11px;color:var(--muted)}
-.svg-up{fill:var(--candle-up);stroke:var(--candle-up)}
-.svg-dn{fill:var(--candle-dn);stroke:var(--candle-dn)}
-.svg-grid{stroke:var(--grid)}
-.svg-txt{fill:var(--muted);font-size:10px;font-family:system-ui,sans-serif}
-.svg-lbl{fill:var(--text);font-size:11px;font-weight:700;font-family:system-ui,sans-serif}
-.svg-path{stroke:var(--accent);fill:none;stroke-width:1.6}
-.svg-sub{stroke:var(--warn);fill:none;stroke-width:1;stroke-dasharray:3 2}
-.svg-sublbl{fill:var(--warn);font-size:9px;font-weight:600;font-family:system-ui,sans-serif}
-.pill.tf{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
-.chip{border-radius:99px;padding:6px 14px;font-weight:600}
+main{display:flex;flex-direction:column;gap:14px;padding-block:14px 40px}
+section.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;min-width:0}
+h2{font-size:15px;margin:0;font-weight:650}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.between{justify-content:space-between}
+.small{font-size:13px}.muted{color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media(min-width:700px){.stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.stats div{background:var(--surface2);border-radius:10px;padding:8px 10px}
+.stats b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+.stats span{font-size:12px;color:var(--muted)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 8px}
+.chip{border-radius:99px;padding:6px 12px;font-size:13px;font-weight:600}
 .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
-.svg-zone{fill:var(--accent);opacity:.13}
-.svg-stop{stroke:var(--short);stroke-width:1.2}
-.svg-inv{stroke:var(--short);stroke-width:1;stroke-dasharray:4 3}
-.svg-tgt{stroke:var(--long);stroke-width:1.2;stroke-dasharray:6 3}
-.svg-ewo-up{fill:var(--candle-up);opacity:.7}
-.svg-ewo-dn{fill:var(--candle-dn);opacity:.7}
+.chip .n{opacity:.75;font-weight:500;margin-left:4px}
+.coins{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
+@media(min-width:760px){.coins{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:1100px){.coins{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.coin{border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--surface);min-width:0}
+.coin .top{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.coin .sym{font-size:16px;font-weight:700;color:var(--text);text-decoration:none;overflow-wrap:anywhere}
+.coin .sym:hover{text-decoration:underline}
+.tag{font-size:11px;border:1px solid var(--border);border-radius:5px;padding:1px 6px;color:var(--muted);white-space:nowrap}
+.pill{font-size:12px;font-weight:600;border-radius:99px;padding:2px 9px;white-space:nowrap}
+.pill.up{background:var(--upbg);color:var(--up)}
+.pill.down{background:var(--downbg);color:var(--down)}
+.pill.flat{background:var(--surface2);color:var(--muted)}
+.pill.warn{background:var(--warnbg);color:var(--warn)}
+.m{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px}
+.m div{background:var(--surface2);border-radius:8px;padding:5px 8px;min-width:0}
+.m span{display:block;font-size:11px;color:var(--muted)}
+.m b{font-size:14px;font-weight:600}
+.m .key{outline:1px solid var(--accent);outline-offset:-1px}
+.pos{color:var(--up)}.neg{color:var(--down)}
+.links{display:flex;gap:14px;margin-top:9px;font-size:13px}
+a{color:var(--accent)}
+.empty{color:var(--muted);padding:10px 0}
+.err{background:var(--downbg);color:var(--down);border-radius:10px;padding:10px 12px;font-weight:500}
+.err:empty{display:none}
+details summary{cursor:pointer;font-weight:650}
+.settings{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:12px}
+.settings label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+textarea.copy{width:100%;min-height:70px;margin-top:8px;font:12px ui-monospace,Menlo,monospace;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px}
 </style>
 </head>
 <body>
 <header>
-  <div class="hwrap">
-    <h1>EW Skener</h1>
-    <div class="status" id="status">Spreman. Klikni „Skeniraj“.</div>
-    <select id="autoScan" title="Automatsko skeniranje">
+  <div class="wrap hrow">
+    <h1>USDT.P Skener</h1>
+    <div class="status" id="status">Bybit USDT perpetual. Klikni „Skeniraj“.</div>
+    <select id="autoScan" aria-label="Automatsko skeniranje">
       <option value="0">Auto: isključeno</option>
       <option value="30">Auto: 30 min</option>
       <option value="60">Auto: 1 h</option>
@@ -129,233 +102,117 @@ a{color:var(--accent)}
   <div class="prog" id="prog"></div>
 </header>
 
-<main>
-  <div class="col">
-    <div id="banners"></div>
+<main class="wrap">
+  <div class="err" id="err" role="alert"></div>
 
-    <section class="card">
-      <h2>Rutina pre sesije <span class="step">koraci 0–1</span></h2>
-      <label class="chk"><input type="checkbox" data-r="rested"> <span><b>Odmoran sam.</b> <span class="muted small">Posle noćne smene samo skeniram.</span></span></label>
-      <label class="chk"><input type="checkbox" data-r="calendar"> <span>Proverio sam kalendar (CPI, FOMC, NFP).</span></label>
-      <label class="chk"><input type="checkbox" data-r="unlocks"> <span>Otključavanja u narednih 48 h i Bybit obaveštenja: problematične coinove upisao sam u „Isključi“.</span></label>
-      <div class="row" style="margin-top:8px">
-        <label class="small muted" for="news">Važne vesti danas (HH:MM, zarezom):</label>
-        <input type="text" id="news" placeholder="14:30, 20:00" style="width:130px">
-      </div>
-      <div class="row" style="margin-top:8px">
-        <label class="small muted" for="exclude">Isključi:</label>
-        <input type="text" id="exclude" placeholder="npr. ARB, SUI" style="flex:1;min-width:120px">
-      </div>
-    </section>
+  <section class="card">
+    <div class="stats" id="stats">
+      <div><b>–</b><span>likvidnih USDT.P</span></div>
+      <div><b>–</b><span>prag OI 4h</span></div>
+      <div><b>–</b><span>na listi</span></div>
+      <div><b>–</b><span>odbijeno</span></div>
+    </div>
+    <p class="small muted" id="rejInfo" style="margin:8px 0 0">Likvidnost: OI ≥ 10M $ i promet 24h ≥ 50M $, samo Bybit. Bez coinova mlađih od 2 nedelje i bez delistinga.</p>
+  </section>
 
-    <section class="card">
-      <h2>Danas <span class="step">limiti</span></h2>
-      <div class="daystats" id="daystats"></div>
+  <section class="card">
+    <div class="row between">
+      <h2>Coinovi</h2>
       <div class="row">
-        <input type="number" id="winR" value="2" step="0.1" min="0" style="width:68px" aria-label="Dobitak u R">
-        <button id="addWin">+ Dobitak (R)</button>
-        <button id="addLoss">Gubitak −1R</button>
-        <button id="addBE">Nula</button>
-        <button id="undo" title="Poništi poslednji unos">↶</button>
+        <label class="small muted" for="sort">Sortiraj</label>
+        <select id="sort">
+          <option value="trueOI">|Pravi OI|</option>
+          <option value="oi4">|OI 4h|</option>
+          <option value="ch24">|Cena 24h|</option>
+          <option value="f8">|Funding|</option>
+          <option value="oiv">OI $</option>
+        </select>
       </div>
-      <p class="small muted" style="margin:8px 0 0">Dan je gotov posle +2R, 2 gubitka ili 3 trejda. Nedeljni limit je −4R.</p>
-    </section>
+    </div>
+    <div class="chips" id="filters" role="group" aria-label="Lista"></div>
+    <div class="row">
+      <button id="copyTv">Kopiraj za TradingView</button>
+      <span class="small muted" id="copyInfo"></span>
+    </div>
+    <textarea class="copy" id="copyBox" hidden readonly aria-label="Lista za TradingView"></textarea>
+    <div class="coins" id="list"><div class="empty">Još nije skenirano.</div></div>
+    <p class="small muted" style="margin:12px 0 0">Pravi OI = promena OI − promena cene, za 4h. Tumačenje gleda smer cene i OI za 4h: novi longovi, novi shortovi, zatvaranje shortova ili zatvaranje longova.</p>
+  </section>
 
-    <section class="card">
-      <h2>Kontekst <span class="step">korak 2</span></h2>
-      <div id="btcBox" class="empty">BTC kontekst se računa pri skeniranju.</div>
-      <h3>Ručno (TradingView)</h3>
-      <label class="chk"><input type="checkbox" data-c="total3w5"> <span>TOTAL3 na 4h je u talasu 5 sa divergencijom. <span class="muted small">Blokira longove na altcoinima.</span></span></label>
-      <label class="chk"><input type="checkbox" data-c="domUp"> <span>BTC.D i USDT.D rastu. <span class="muted small">Short na altcoinima ima bolji kontekst.</span></span></label>
-    </section>
-  </div>
+  <section class="card">
+    <h2>Isključi</h2>
+    <p class="small muted" style="margin:6px 0 8px">Otključavanja tokena u narednih 48 h, Bybit obaveštenja o delistingu ili promeni ugovora.</p>
+    <input type="text" id="exclude" placeholder="npr. ARB, SUIUSDT.P" style="width:100%">
+  </section>
 
-  <div class="col">
-    <section class="card">
-      <h2>Timeframe <span class="step">do 3</span></h2>
-      <div class="row" id="tfChips" role="group" aria-label="Timeframe strukture"></div>
-      <p class="small muted" id="tfInfo" style="margin:8px 0 0"></p>
-    </section>
-
-    <section class="card">
-      <h2>A lista <span class="step">korak 5–6</span> <span class="muted small" id="aCount"></span></h2>
-      <p class="small muted" style="margin:0">Predlozi countova. Svaki proveri na TradingView-u: glavni count, alternativa i 5–3 na manjem TF-u. Ocena je preliminarna.</p>
-      <div id="aList"><div class="empty">Još nije skenirano.</div></div>
-    </section>
-
-    <section class="card">
-      <h2>B lista i odbačeni <span class="step">proveri za 1–2 h</span></h2>
-      <div id="bList" class="blist"><div class="empty">—</div></div>
-    </section>
-
-    <section class="card">
-      <h2>Aktivnost <span class="step">koraci 3–4</span> <span class="muted small" id="actInfo"></span></h2>
-      <div class="tablewrap"><table id="actTable"><thead></thead><tbody><tr><td class="empty">—</td></tr></tbody></table></div>
-      <p class="small muted" style="margin:8px 0 0">Samo Bybit USDT perpetual ugovori (USDT.P). OI i promet su samo sa Bybita (stroži uslov od Coinalyze zbira). Pravi OI = promena OI − promena cene, za 4h.</p>
-    </section>
-
-    <section class="card">
-      <details id="setDetails">
-        <summary>Podešavanja</summary>
-        <div class="settings" id="settings"></div>
-        <div class="row" style="margin-top:10px">
-          <button id="resetSettings">Vrati podrazumevano</button>
-          <button id="themeBtn">Tema: auto</button>
-          <span class="small muted" id="apiInfo"></span>
-        </div>
-      </details>
-    </section>
-  </div>
+  <section class="card">
+    <details>
+      <summary>Podešavanja</summary>
+      <div class="settings" id="settings"></div>
+      <div class="row" style="margin-top:12px">
+        <button id="resetSettings">Vrati podrazumevano</button>
+        <button id="themeBtn">Tema: auto</button>
+        <span class="small muted" id="apiInfo"></span>
+      </div>
+    </details>
+  </section>
 </main>
 
 <script>
 'use strict';
-/* ====================== skladište ====================== */
+/* ---------- skladište ---------- */
 const LS = {
-  get(k, d){ try{ const v = localStorage.getItem('ewsk.'+k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } },
-  set(k, v){ try{ localStorage.setItem('ewsk.'+k, JSON.stringify(v)); }catch(e){} }
+  get(k, d){ try{ const v = localStorage.getItem('usdtp.'+k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem('usdtp.'+k, JSON.stringify(v)); }catch(e){} }
 };
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 
-/* ====================== podešavanja ====================== */
+/* ---------- podešavanja (brojevi iz rutine, koraci 3–4) ---------- */
 const SCHEMA = [
-  {k:'balance', l:'Početno stanje računa (USDT)', d:5000, step:100},
-  {k:'curBalance', l:'Trenutno stanje (0 = isto)', d:0, step:10},
-  {k:'riskPct', l:'R = % početnog stanja', d:1, step:0.1},
-  {k:'feesPct', l:'Provizije ulaz+izlaz (%)', d:0.11, step:0.005},
-  {k:'minStopPct', l:'Najmanji stop (%)', d:0.4, step:0.05},
   {k:'minOI', l:'Min. OI na Bybitu ($)', d:10e6, step:1e6},
   {k:'minTurnover', l:'Min. promet 24h ($)', d:50e6, step:5e6},
   {k:'minAgeDays', l:'Min. starost coina (dana)', d:14, step:1},
-  {k:'oiThr', l:'OI promena 4h (%)', d:5, step:0.5},
-  {k:'oiThrHigh', l:'Ako ih je >15, prag (%)', d:8, step:0.5},
-  {k:'oiThrLow', l:'Ako ih je <5, prag (%)', d:3, step:0.5},
-  {k:'keepMax', l:'Najviše coinova', d:15, step:1},
-  {k:'topMovers', l:'Najveći rast/pad 24h (po N)', d:3, step:1},
+  {k:'oiThr', l:'Promena OI 4h (%)', d:5, step:0.5},
+  {k:'oiThrHigh', l:'Ako ih je više od max, prag (%)', d:8, step:0.5},
+  {k:'oiThrLow', l:'Ako ih je manje od 5, prag (%)', d:3, step:0.5},
+  {k:'keepMax', l:'Najviše coinova na listi', d:15, step:1},
+  {k:'topMovers', l:'Najveći rast i pad 24h (po N)', d:3, step:1},
   {k:'fundingExt', l:'Ekstreman funding (% / 8h)', d:0.05, step:0.005},
-  {k:'always', l:'Uvek analiziraj', d:'BTCUSDT, ETHUSDT', text:true},
+  {k:'always', l:'Uvek na listi', d:'BTC, ETH', text:true},
   {k:'apiBase', l:'API adresa (prazno = auto)', d:'', text:true},
 ];
 const DEF = Object.fromEntries(SCHEMA.map(s => [s.k, s.d]));
 let S = Object.assign({}, DEF, LS.get('settings', {}));
-
 function renderSettings(){
   const box = $('#settings'); box.innerHTML = '';
   for(const s of SCHEMA){
-    const lab = document.createElement('label');
-    lab.textContent = s.l;
+    const lab = document.createElement('label'); lab.textContent = s.l;
     const inp = document.createElement('input');
-    inp.type = s.text ? 'text' : 'number';
+    inp.type = s.text ? 'text' : 'number'; inp.id = 'set-' + s.k;
     if(!s.text) inp.step = s.step;
     inp.value = S[s.k];
-    inp.addEventListener('change', () => {
-      S[s.k] = s.text ? inp.value.trim() : (parseFloat(inp.value) || 0);
-      LS.set('settings', S); refreshBanners(); if(lastResult) renderAll();
-    });
+    inp.addEventListener('change', () => { S[s.k] = s.text ? inp.value.trim() : (parseFloat(inp.value) || 0); LS.set('settings', S); });
     lab.appendChild(inp); box.appendChild(lab);
   }
 }
-
-/* ====================== tema ====================== */
 let theme = LS.get('theme', 'auto');
 function applyTheme(){
-  if(theme === 'auto') document.documentElement.removeAttribute('data-theme');
-  else document.documentElement.setAttribute('data-theme', theme);
+  if(theme === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', theme);
   $('#themeBtn').textContent = 'Tema: ' + ({auto:'auto', light:'svetla', dark:'tamna'})[theme];
 }
 $('#themeBtn').onclick = () => { theme = theme === 'auto' ? 'light' : theme === 'light' ? 'dark' : 'auto'; LS.set('theme', theme); applyTheme(); };
+$('#resetSettings').onclick = () => { S = Object.assign({}, DEF); LS.set('settings', S); renderSettings(); };
+$('#exclude').value = LS.get('exclude', '');
+$('#exclude').addEventListener('change', e => LS.set('exclude', e.target.value));
 
-/* ====================== rutina, kontekst, vesti ====================== */
-const todayKey = () => { const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
-function dayState(){ const st = LS.get('day', {}); return st.date === todayKey() ? st : {date: todayKey(), routine:{}, ctx:{}, news:'', exclude: st.exclude || ''}; }
-function saveDay(st){ LS.set('day', st); }
-let DAY = dayState();
-
-document.querySelectorAll('[data-r]').forEach(el => {
-  el.checked = !!DAY.routine[el.dataset.r];
-  el.addEventListener('change', () => { DAY.routine[el.dataset.r] = el.checked; saveDay(DAY); refreshBanners(); });
-});
-document.querySelectorAll('[data-c]').forEach(el => {
-  el.checked = !!DAY.ctx[el.dataset.c];
-  el.addEventListener('change', () => { DAY.ctx[el.dataset.c] = el.checked; saveDay(DAY); if(lastResult) renderAll(); });
-});
-$('#news').value = DAY.news || '';
-$('#news').addEventListener('change', e => { DAY.news = e.target.value; saveDay(DAY); refreshBanners(); });
-$('#exclude').value = DAY.exclude || '';
-$('#exclude').addEventListener('change', e => { DAY.exclude = e.target.value; saveDay(DAY); });
-
-function newsNear(){
-  const now = new Date();
-  for(const part of (DAY.news || '').split(/[,;\s]+/)){
-    const m = part.match(/^(\d{1,2})[:.](\d{2})$/); if(!m) continue;
-    const t = new Date(now); t.setHours(+m[1], +m[2], 0, 0);
-    const diff = (now - t) / 60000;
-    if(diff >= -30 && diff <= 30) return part;
-  }
-  return null;
-}
-
-/* ====================== dnevni limiti ====================== */
-function weekStart(d){ const x = new Date(d); const wd = (x.getDay() + 6) % 7; x.setDate(x.getDate() - wd); x.setHours(0,0,0,0); return x.getTime(); }
-function journal(){ return LS.get('journal', []); }
-function dayStats(){
-  const j = journal(), tk = todayKey(), ws = weekStart(new Date());
-  const today = j.filter(e => e.d === tk);
-  const week = j.filter(e => e.ts >= ws);
-  return {
-    n: today.length, losses: today.filter(e => e.r < 0).length,
-    r: today.reduce((a,e) => a + e.r, 0), wr: week.reduce((a,e) => a + e.r, 0)
-  };
-}
-function addTrade(r){ const j = journal(); j.push({d: todayKey(), ts: Date.now(), r}); LS.set('journal', j.slice(-2000)); renderDay(); refreshBanners(); }
-$('#addWin').onclick = () => addTrade(Math.abs(parseFloat($('#winR').value) || 0));
-$('#addLoss').onclick = () => addTrade(-1);
-$('#addBE').onclick = () => addTrade(0);
-$('#undo').onclick = () => { const j = journal(); const tk = todayKey(); for(let i = j.length-1; i >= 0; i--){ if(j[i].d === tk){ j.splice(i,1); break; } } LS.set('journal', j); renderDay(); refreshBanners(); };
-function fmtR(r){ return (r > 0 ? '+' : '') + (Math.round(r*100)/100) + 'R'; }
-function renderDay(){
-  const s = dayStats();
-  const cell = (v, l, bad) => `<div><b class="${bad ? 'neg' : ''}">${v}</b><span>${l}</span></div>`;
-  $('#daystats').innerHTML =
-    cell(s.n + '/3', 'trejdova', s.n >= 3) + cell(s.losses + '/2', 'gubitaka', s.losses >= 2) +
-    cell(fmtR(s.r), 'danas', false) + cell(fmtR(s.wr), 'nedelja', s.wr <= -4);
-}
-function limitReason(){
-  const s = dayStats();
-  if(s.wr <= -4) return 'Nedeljni limit −4R je dostignut. Pauza do sledeće nedelje i pregled dnevnika.';
-  if(s.r >= 2) return 'Dnevni cilj +2R je dostignut. Dan je završen.';
-  if(s.losses >= 2) return '2 gubitka danas. Dan je završen.';
-  if(s.n >= 3) return '3 trejda danas. Dan je završen.';
-  return null;
-}
-function ddMode(){
-  const cur = S.curBalance > 0 ? S.curBalance : S.balance;
-  let on = LS.get('ddMode', false);
-  if(cur <= S.balance * 0.95) on = true;
-  else if(cur >= S.balance * 0.98) on = false;
-  LS.set('ddMode', on);
-  return on;
-}
-function refreshBanners(){
-  const b = [];
-  if(!DAY.routine.rested) b.push(['bad', 'Nisi označio da si odmoran: danas samo skeniraš, bez trejdova.']);
-  const lr = limitReason(); if(lr) b.push(['bad', lr]);
-  const nn = newsNear(); if(nn) b.push(['bad', `Vest u ${nn}: ne trguješ 30 min pre i posle.`]);
-  if(ddMode()) b.push(['warn', 'Račun je 5% ispod početka faze: rizik je 0.5R dok se ne vrati na −2%.']);
-  if(!DAY.routine.calendar) b.push(['warn', 'Kalendar vesti za danas nije proveren.']);
-  $('#banners').innerHTML = b.map(([c,t]) => `<div class="banner ${c}">${esc(t)}</div>`).join('');
-}
-
-/* ====================== Bybit API ====================== */
+/* ---------- Bybit API (javni podaci) ---------- */
 let API = 'https://api.bybit.com';
 async function detectApi(){
-  if(S.apiBase){ API = S.apiBase.replace(/\/$/, ''); return; }
-  if(/^https?:$/.test(location.protocol)){
-    try{
-      const r = await fetch('bybit/v5/market/time', {cache:'no-store'});
-      if(r.ok){ const j = await r.json(); if(j && j.retCode === 0){ API = 'bybit'; } }
-    }catch(e){}
+  API = 'https://api.bybit.com';
+  if(S.apiBase){ API = S.apiBase.replace(/\/$/, ''); }
+  else if(/^https?:$/.test(location.protocol)){
+    try{ const r = await fetch('bybit/v5/market/time', {cache:'no-store'}); if(r.ok){ const j = await r.json(); if(j && j.retCode === 0) API = 'bybit'; } }catch(e){}
   }
   $('#apiInfo').textContent = 'API: ' + (API === 'bybit' ? 'lokalni proxy (serve.py)' : API);
 }
@@ -367,564 +224,64 @@ async function api(path, params){
     try{ r = await fetch(url, {cache:'no-store'}); }
     catch(e){
       const hint = location.protocol === 'file:' ? 'Pokreni serve.py i otvori skener preko njega.'
-        : API.startsWith('https://api.bybit.com') ? 'Bybit verovatno ne dozvoljava pozive iz browsera. Napravi Cloudflare Worker (uputstvo u README) i upiši njegovu adresu u Podešavanja → API adresa.'
+        : API.startsWith('https://api.bybit.com') ? 'Bybit verovatno ne dozvoljava pozive iz browsera. Napravi Cloudflare Worker (README) i upiši adresu u Podešavanja → API adresa.'
         : 'Proveri adresu u Podešavanja → API adresa i internet vezu.';
       const err = new Error('Browser nije dobio odgovor od Bybita. ' + hint); err.fatal = true; throw err;
     }
-    if(r.status === 403){ const err = new Error('Bybit odbija pristup (403). Najčešće je to geo-blokada IP adrese (npr. VPN u SAD).'); err.fatal = true; throw err; }
-    if(r.status === 429 || r.status >= 500){ if(attempt < 4){ await sleep(800 * (attempt+1)); continue; } throw new Error('Bybit HTTP ' + r.status); }
+    if(r.status === 403){ const err = new Error('Bybit odbija pristup (403). Najčešće je to VPN u zemlji koju Bybit blokira.'); err.fatal = true; throw err; }
+    if(r.status === 429 || r.status >= 500){ if(attempt < 4){ await sleep(800*(attempt+1)); continue; } throw new Error('Bybit HTTP ' + r.status); }
     const j = await r.json();
     if(j.retCode === 0) return j.result;
-    if(j.retCode === 10006 && attempt < 4){ await sleep(1000 * (attempt+1)); continue; }
+    if(j.retCode === 10006 && attempt < 4){ await sleep(1000*(attempt+1)); continue; }
     throw new Error('Bybit greška ' + j.retCode + ': ' + j.retMsg);
   }
 }
 async function pool(items, n, fn, onProg){
-  let i = 0, done = 0; const out = new Array(items.length);
+  let i = 0, done = 0;
   async function worker(){
     while(i < items.length){
       const k = i++;
-      try{ out[k] = await fn(items[k], k); }
-      catch(e){ if(e.fatal) throw e; out[k] = {error: e.message}; }
+      try{ await fn(items[k]); }catch(e){ if(e.fatal) throw e; }
       done++; if(onProg) onProg(done, items.length);
     }
   }
   await Promise.all(Array.from({length: Math.min(n, items.length)}, worker));
-  return out;
 }
 async function instruments(){
   const all = []; let cursor = '';
   for(let g = 0; g < 10; g++){
     const p = {category:'linear', limit:1000}; if(cursor) p.cursor = cursor;
     const r = await api('/v5/market/instruments-info', p);
-    all.push(...(r.list || []));
-    cursor = r.nextPageCursor; if(!cursor) break;
+    all.push(...(r.list || [])); cursor = r.nextPageCursor; if(!cursor) break;
   }
   return all;
 }
-async function klines(symbol, interval, limit){
-  const r = await api('/v5/market/kline', {category:'linear', symbol, interval, limit});
-  return (r.list || []).map(x => ({t:+x[0], o:+x[1], h:+x[2], l:+x[3], c:+x[4], v:+x[5]})).reverse();
-}
-
-/* ====================== indikatori ====================== */
-function ema(x, n){ const o = Array(x.length).fill(null); if(x.length < n) return o; let s = 0; for(let i = 0; i < n; i++) s += x[i]; let e = s/n; o[n-1] = e; const a = 2/(n+1); for(let i = n; i < x.length; i++){ e = a*x[i] + (1-a)*e; o[i] = e; } return o; }
-function sma(x, n){ const o = Array(x.length).fill(null); for(let i = n-1; i < x.length; i++){ let s = 0, ok = true; for(let j = i-n+1; j <= i; j++){ if(x[j] == null){ ok = false; break; } s += x[j]; } if(ok) o[i] = s/n; } return o; }
-function rsi(x, n){
-  const o = Array(x.length).fill(null); if(x.length <= n) return o;
-  let g = 0, l = 0;
-  for(let i = 1; i <= n; i++){ const d = x[i]-x[i-1]; if(d > 0) g += d; else l -= d; }
-  g /= n; l /= n; o[n] = l === 0 ? 100 : 100 - 100/(1+g/l);
-  for(let i = n+1; i < x.length; i++){ const d = x[i]-x[i-1]; g = (g*(n-1) + Math.max(d,0))/n; l = (l*(n-1) + Math.max(-d,0))/n; o[i] = l === 0 ? 100 : 100 - 100/(1+g/l); }
-  return o;
-}
-function atr(c, n){
-  const tr = c.map((b,i) => i === 0 ? b.h-b.l : Math.max(b.h-b.l, Math.abs(b.h-c[i-1].c), Math.abs(b.l-c[i-1].c)));
-  const o = Array(c.length).fill(null); if(c.length < n) return o;
-  let a = 0; for(let i = 0; i < n; i++) a += tr[i]; a /= n; o[n-1] = a;
-  for(let i = n; i < c.length; i++){ a = (a*(n-1) + tr[i])/n; o[i] = a; }
-  return o;
-}
-function indicators(c){
-  const close = c.map(b => b.c);
-  const e5 = ema(close, 5), e35 = ema(close, 35);
-  const ewo = close.map((x,i) => e35[i] == null ? null : (e5[i]-e35[i]) / x * 100);   // EWO_LB u %
-  const r14 = rsi(close, 14), r3 = rsi(close, 3);
-  const mom = r14.map((v,i) => (i >= 9 && v != null && r14[i-9] != null) ? v - r14[i-9] : null);
-  const s3 = sma(r3, 3);
-  const ci = mom.map((v,i) => (v != null && s3[i] != null) ? v + s3[i] : null);   // Composite Index (Brown)
-  return {ewo, rsi: r14, ci, ciF: sma(ci, 13), ciS: sma(ci, 33), atr: atr(c, 14)};
-}
-const maxIn = (a, i0, i1) => { let m = -Infinity; for(let i = Math.max(0,i0); i <= i1 && i < a.length; i++) if(a[i] != null && a[i] > m) m = a[i]; return m === -Infinity ? null : m; };
-const minIn = (a, i0, i1) => { let m = Infinity; for(let i = Math.max(0,i0); i <= i1 && i < a.length; i++) if(a[i] != null && a[i] < m) m = a[i]; return m === Infinity ? null : m; };
-const avgIn = (a, i0, i1) => { let s = 0, n = 0; for(let i = Math.max(0,i0); i <= i1 && i < a.length; i++){ s += a[i]; n++; } return n ? s/n : null; };
-
-/* ZigZag: preokret kad cena ode k × ATR od ekstrema. Poslednji pivot je privremen (tent). */
-function zigzag(c, at, k){
-  const piv = []; let dir = 0, hi = 0, lo = 0;
-  for(let i = 1; i < c.length; i++){
-    const th = k * (at[i] != null ? at[i] : (c[i].h - c[i].l));
-    if(dir === 0){
-      if(c[i].h > c[hi].h) hi = i;
-      if(c[i].l < c[lo].l) lo = i;
-      if(c[hi].h - c[lo].l >= th){
-        if(hi > lo){ piv.push({i:lo, p:c[lo].l, t:'L'}); dir = 1; }
-        else { piv.push({i:hi, p:c[hi].h, t:'H'}); dir = -1; }
-      }
-    } else if(dir === 1){
-      if(c[i].h >= c[hi].h) hi = i;
-      else if(c[hi].h - c[i].l >= th){ piv.push({i:hi, p:c[hi].h, t:'H'}); dir = -1; lo = i; }
-    } else {
-      if(c[i].l <= c[lo].l) lo = i;
-      else if(c[i].h - c[lo].l >= th){ piv.push({i:lo, p:c[lo].l, t:'L'}); dir = 1; hi = i; }
-    }
-  }
-  if(dir === 1) piv.push({i:hi, p:c[hi].h, t:'H', tent:true});
-  else if(dir === -1) piv.push({i:lo, p:c[lo].l, t:'L', tent:true});
-  return piv;
-}
-
-/* ====================== Elliott detekcija ======================
-   Sve se računa u "orijentisanom" prostoru: za silazni impuls cene se negiraju,
-   RSI postaje 100−RSI, a EWO i CI menjaju znak. Logika je zato pisana samo za rast. */
-function orient(c, ind, piv, fine, sgn){
-  const flip = p => ({...p, p: p.p*sgn, t: sgn > 0 ? p.t : (p.t === 'H' ? 'L' : 'H')});
-  return {
-    sgn, c,
-    h: c.map(b => sgn > 0 ? b.h : -b.l), l: c.map(b => sgn > 0 ? b.l : -b.h),
-    cl: c.map(b => sgn*b.c), v: c.map(b => b.v),
-    ewo: ind.ewo.map(x => x == null ? null : x*sgn),
-    rsi: ind.rsi.map(x => x == null ? null : (sgn > 0 ? x : 100-x)),
-    ci: ind.ci.map(x => x == null ? null : x*sgn),
-    atr: ind.atr, P: piv.map(flip), F: fine.map(flip), last: c.length-1
-  };
-}
-const inR = (x, a, b) => x >= a && x <= b;
-const pct = x => (x*100).toFixed(1) + '%';
-
-function mkCand(O, o){
-  // o: setup, up (smer trejda u orijentisanom prostoru), phase, pts, levels (orijentisani), checks...
-  const s = O.sgn, real = y => y == null ? null : y*s;
-  const dir = (o.up === (s > 0)) ? 'LONG' : 'SHORT';
-  const c = {
-    setup: o.setup, dir, phase: o.phase, status: o.status, checks: o.checks || [], blocks: o.blocks || [],
-    notes: o.notes || [], alt: o.alt || '', pts: o.pts.map((p, idx) => ({n: (o.labels || '012345')[idx], i: p.i, t: O.c[p.i].t, p: real(p.p)})),
-    sgn: s, trunc: !!o.trunc, t3x: o.t3x != null ? real(o.t3x) : null, subs: [],
-    entry: real(o.entry), stop: real(o.stop), inval: real(o.inval), t1: real(o.t1), t2: real(o.t2), t2alt: o.t2alt != null ? real(o.t2alt) : null,
-    zone: o.zone ? o.zone.map(real) : null, startI: o.pts[0].i
-  };
-  if(o.entry != null && o.stop != null){
-    const ts = o.up ? 1 : -1, risk = ts*(o.entry - o.stop);
-    c.stopPct = Math.abs(o.entry - o.stop) / Math.abs(o.entry) * 100;
-    c.rr1 = risk > 0 ? ts*(o.t1 - o.entry)/risk : null;
-    c.rr2 = risk > 0 ? ts*(o.t2 - o.entry)/risk : null;
-  }
-  return c;
-}
-
-/* Lanci pivota unazad: svaka noga mora imati svoje krajeve kao ekstreme segmenta,
-   pa se unutrašnji podtalasi (npr. abc u talasu 2) preskaču. */
-function backChains(O, P, endJ, types, minLeg, branch){
-  const res = [];
-  (function rec(j, k, acc){
-    if(k === 0){ res.push(acc.slice().reverse()); return; }
-    const cur = P[j], want = types[k-1];
-    let found = 0;
-    for(let q = j-1; q >= 0 && found < branch; q--){
-      const pq = P[q];
-      if(cur.t === 'H' ? maxIn(O.h, pq.i, cur.i) > cur.p + 1e-12 : minIn(O.l, pq.i, cur.i) < cur.p - 1e-12) break;
-      if(pq.t !== want) continue;
-      if(want === 'L' ? minIn(O.l, pq.i, cur.i) < pq.p - 1e-12 : maxIn(O.h, pq.i, cur.i) > pq.p + 1e-12) continue;
-      if(Math.abs(cur.p - pq.p) < minLeg) continue;
-      found++; acc.push(pq); rec(q, k-1, acc); acc.pop();
-    }
-  })(endJ, types.length-1, [P[endJ]]);
-  return res;
-}
-/* Sidra: skorašnji pivot tipa t koji je ostao ekstrem do danas. */
-function anchors(O, t, maxAge){
-  const P = O.P, L = O.last, out = [];
-  for(let j = P.length-1; j >= 0 && (P[j].i >= L - maxAge || j === P.length-1); j--){   // privremeni pivot važi bez obzira na starost
-    const p = P[j]; if(p.t !== t) continue;
-    if(t === 'H' ? maxIn(O.h, p.i, L) <= p.p + 1e-12 : minIn(O.l, p.i, L) >= p.p - 1e-12) out.push(j);
-  }
-  return out;
-}
-function finePivotsBetween(O, a, b, type){ return O.F.filter(f => f.i > a && f.i < b && (!type || f.t === type)); }
-
-function evalS1(O, pts, isLast){
-  const L = O.last, close = O.cl[L], buf = 0.3*(O.atr[L] || 0);
-  const [p0,p1,p2,p3,p4,p5] = pts;
-  const len1 = p1.p-p0.p, len3 = p3.p-p2.p, len5 = p5.p-p4.p;
-  if(!(p2.p > p0.p && p3.p > p1.p && p4.p > p1.p)) return null;
-  const trunc = !(p5.p > p3.p);                                            // skraćena peta
-  if(trunc && (isLast || !(len3 >= 1.618*len1 && p5.p >= p3.p - 0.236*len3 && p5.p > p4.p))) return null;
-  if(!trunc && len3 < len1 && len3 < len5) return null;
-  const e3 = maxIn(O.ewo, p2.i, p3.i), e5 = maxIn(O.ewo, p4.i, p5.i);
-  if(e3 == null || e5 == null || !(e3 > e5)) return null;                 // bez divergencije nema trejda
-  const ratio5 = len5/len1;
-  const slope = (p4.p-p2.p)/(p4.i-p2.i), chTop = p3.p + slope*(p5.i-p3.i);
-  const atCh = p5.p >= chTop - 0.1*len5;
-  const fib = inR(ratio5, 0.6, 1.03) || atCh;
-  const vol3 = avgIn(O.v, p2.i, p3.i), vol5 = avgIn(O.v, p4.i, p5.i);
-  const ci3 = maxIn(O.ci, p2.i, p3.i), ci5 = maxIn(O.ci, p4.i, p5.i);
-  const r3 = maxIn(O.rsi, p2.i, p3.i), r5 = maxIn(O.rsi, p4.i, p5.i);
-  const ciDiv = ci3 != null && ci5 != null && ci5 < ci3, rsiDiv = r5 < r3;
-  const blocks = []; if(vol5 >= vol3) blocks.push('Volumen u talasu 5 je ≥ talasa 3: peta se verovatno produžava.');
-  const checks = [
-    {k:'uslov', ok:true, t: trunc ? '5 talasa sa skraćenom petom (2 ne ispod 0, 4 ne ulazi u 1, talas 3 jak)' : '5 talasa bez prekršenog pravila (2 ne ispod 0, 3 nije najkraći, 4 ne ulazi u 1)'},
-    {k:'uslov', ok:true, t:`EWO divergencija: vrh u 3 (${e3.toFixed(2)}) > vrh u 5 (${e5.toFixed(2)})`},
-    {k:'uslov', ok: trunc ? null : fib, t:`Talas 5 = ${ratio5.toFixed(2)} × talas 1${atCh ? ', na gornjoj liniji kanala' : ''} (zona 0.618–1.0${trunc ? '; ne važi za skraćenu petu' : ''})`},
-    {k:'uslov', id:'sub', w:[4,5,5], ok:null, t:'Talas 5 ima 5 podtalasa ili je završna dijagonala'},
-    {k:'uslov', ok:null, t:'Znam šta je ovaj impuls u većem stepenu (od toga zavisi cilj 2)'},
-    {k:'bod', ok:fib, t:'Fibonacci zona'},
-    {k:'bod', ok:true, t:'EWO se ponaša kako setup traži'},
-    {k:'bod', ok:ciDiv, t:`Composite Index niži vrh u 5${ciDiv && !rsiDiv ? ' (RSI ga nema – najjače)' : ''}`},
-    {k:'bod', ok:r3 >= 70 && rsiDiv, t:`RSI: talas 3 u gornjoj zoni (${r3.toFixed(0)}), talas 5 niže (${r5.toFixed(0)})`},
-  ];
-  const big = Math.max(len1, len3, len5), ext = len3 === big && len3 >= 1.618*Math.max(len1, len5) ? 3
-    : len5 === big && len5 >= 1.618*Math.max(len1, len3) ? 5 : len1 === big && len1 >= 1.618*Math.max(len3, len5) ? 1 : null;
-  if(ext === 3) checks.push({k:'info', ok:true, t:`Produžen je talas 3 (${(len3/len1).toFixed(2)} × talas 1): talas 5 je obično ≈ talas 1.`});
-  if(ext === 5) checks.push({k:'info', ok:true, t:'Produžen je talas 5: posle njega cena se često brzo vraća do dna podtalasa ii unutar pete (cilj 2 iz tabele).'});
-  if(ext === 1) checks.push({k:'info', ok:true, t:'Produžen je talas 1: talasi 3 i 5 su obično kraći i slični po dužini.'});
-  if(trunc) checks.push({k:'info', ok:null, t:'Skraćena peta (truncation): vrh 5 nije prešao vrh 3. Važi samo ako talas 5 ima jasnih 5 podtalasa; najavljuje slabost trenda.'});
-  const t1 = p4.p, t2 = p5.p - 0.618*(p5.p-p0.p);
-  if(isLast){
-    return {setup:1, up:false, phase:'B', pts, checks, blocks,
-      status:`Talas 5 je u toku (${ratio5.toFixed(2)} × talas 1). Setup 1 dolazi kad se završi.`, inval:p5.p, t1, t2};
-  }
-  if(close >= p5.p || close <= t1) return null;                           // probijeno ili već kasno
-  const lowAfter = minIn(O.l, p5.i+1, L); if(lowAfter == null) return null;
-  const drop = p5.p - lowAfter, z1 = lowAfter + 0.5*drop, z2 = lowAfter + 0.618*drop;
-  const line24 = p2.p + slope*(L - p2.i), broke = close < line24;
-  const status = close < z1 ? 'Posle vrha: čekam 5 nadole pa 3 nagore u zonu 50–61.8%.'
-               : close <= z2 ? 'Cena je u zoni ulaza 50–61.8%. Čekam presek Composite Index-a nadole.'
-               : 'Cena je iznad zone ulaza, blizu vrha talasa 5.';
-  checks.push({k:'info', ok:broke, t: broke ? 'Linija 2–4 probijena zatvaranjem sveće: agresivni ulaz uz pola rizika' : 'Linija 2–4 još nije probijena'});
-  return {setup:1, up:false, phase:'A', pts, checks, blocks, status: (trunc ? 'Skraćena peta. ' : '') + status, trunc, ext,
-    entry:(z1+z2)/2, zone:[z1,z2], stop:p5.p+buf, inval:p5.p, t1, t2,
-    alt:'Talas 5 se produžava (nov vrh iznad 5 sa EWO iznad vrha talasa 3).',
-    notes:['Cilj 2 je ovde 61.8% impulsa. Izaberi ga po tabeli većeg stepena (talas 1 → 50–61.8%, talas 3 → samo cilj 1).']};
-}
-
-function evalS2(O, pts, caseA, minW1){
-  const L = O.last, close = O.cl[L], buf = 0.3*(O.atr[L] || 0);
-  const [p0,p1,p2] = pts;
-  if(p2.p <= p0.p) return null;
-  const len1 = p1.p - p0.p; if(len1 < minW1) return null;
-  const r2 = (p1.p - p2.p)/len1;
-  const w2end = caseA ? L : p2.i;
-  const rsi1 = maxIn(O.rsi, p0.i, p1.i), ewo1 = maxIn(O.ewo, p0.i, p1.i), ewo2 = minIn(O.ewo, p1.i, w2end);
-  if(rsi1 == null || ewo1 == null || ewo2 == null || ewo1 <= 0) return null;
-  const ewoOk = ewo2 <= 0.1*ewo1;
-  if(rsi1 <= 60 || !ewoOk) return null;
-  const lows = finePivotsBetween(O, p1.i, p2.i, 'L').concat([p2]);
-  let ciDiv = false;
-  if(lows.length >= 2){ const A = lows[lows.length-2], C = lows[lows.length-1]; ciDiv = C.p < A.p && O.ci[C.i] != null && O.ci[A.i] != null && O.ci[C.i] > O.ci[A.i]; }
-  const rsi2 = minIn(O.rsi, p1.i, w2end);
-  const fib = inR(r2, 0.48, 0.80);
-  const checks = [
-    {k:'uslov', id:'sub', w:[0,1,5], ok:null, t:'Talas 1 ima 5 podtalasa (impuls ili vodeća dijagonala)'},
-    {k:'uslov', id:'sub', w:[1,2,3], ok:null, t:'Talas 2 ima 3 podtalasa (zigzag ili flat)'},
-    {k:'uslov', ok: fib, t:`Talas 2 je vratio ${pct(r2)} talasa 1 (zona 50–78.6%) i nije ispod početka`},
-    {k:'uslov', ok: true, t:`RSI u talasu 1 je prešao 60 (max ${rsi1.toFixed(0)})`},
-    {k:'uslov', ok: true, t:`EWO se u talasu 2 vratio do nule (${ewo2.toFixed(2)})`},
-    {k:'bod', ok: fib, t:'Fibonacci zona'},
-    {k:'bod', ok: true, t:'EWO se ponaša kako setup traži'},
-    {k:'bod', ok: ciDiv, t:'Obična divergencija na kraju talasa 2 (C niže od A, Composite Index više)'},
-    {k:'bod', ok: rsi2 != null && rsi2 >= 35, t:`RSI u Brownovoj zoni: korekcija staje oko 40 (min ${rsi2 != null ? rsi2.toFixed(0) : '–'})`},
-  ];
-  const t1 = p2.p + len1, t2 = p2.p + 1.618*len1;
-  const notes = ['Zamka: ako cena pređe vrh talasa 1, a EWO ne pređe svoj vrh iz talasa 1, može biti talas B proširenog flata. Uzmi cilj 1 i stop pomeri na ulaz.'];
-  const alt = 'Ovo je talas C korekcije (C = A). Cilj 1 važi u oba scenarija.';
-  checks.push({k:'info', ok:true, t:'Talas 3 je najčešće produženi talas: ostatak drži dok EWO pravi nove vrhove (cilj 2.618 × talas 1).'});
-  const base = {setup:2, up:true, pts, labels:'012', checks, notes, alt, inval:p0.p, t3x: p2.p + 2.618*len1};
-  if(caseA){
-    if(r2 < 0.236 || r2 > 0.80) return null;
-    if(r2 < 0.45){
-      const z1 = p1.p - 0.5*len1, z2 = p1.p - 0.786*len1, e = p1.p - 0.618*len1;
-      return {...base, phase:'B', status:`Talas 2 je u toku (${pct(r2)}). Zona ulaza je niže.`, zone:[z1,z2], entry:e, stop:z2-buf, t1:e+len1, t2:e+1.618*len1};
-    }
-    return {...base, phase:'A', status:'Talas 2 je u zoni 50–78.6%. Čekam podtalase i–ii na 5m/3m i presek Composite Index-a nagore.',
-      zone:[p1.p-0.5*len1, p1.p-0.786*len1], entry:close, stop:Math.min(p2.p, close)-buf, t1, t2};
-  }
-  if(!inR(r2, 0.45, 0.80) || close >= p1.p) return null;
-  return {...base, phase:'A', status:'Talas 2 je verovatno završen. Ulaz je na kraju podtalasa ii, uz presek Composite Index-a.',
-    entry:close, stop:p2.p-buf, t1, t2};
-}
-
-function evalS3(O, pts, caseA){
-  const L = O.last, close = O.cl[L], buf = 0.3*(O.atr[L] || 0);
-  const [p0,p1,p2,p3,p4] = pts;
-  if(!(p2.p > p0.p && p3.p > p1.p && p4.p > p1.p)) return null;
-  const len1 = p1.p-p0.p, len3 = p3.p-p2.p, r2 = (p1.p-p2.p)/len1, r4 = (p3.p-p4.p)/len3;
-  const w4end = caseA ? L : p4.i;
-  const e1 = maxIn(O.ewo, p0.i, p1.i), e3 = maxIn(O.ewo, p2.i, p3.i), e4 = minIn(O.ewo, p3.i, w4end);
-  if(e1 == null || e3 == null || e4 == null || e3 <= 0) return null;
-  const proj = p4.p + len1;
-  const ewoBig = e3 > e1, ewoZero = e4 <= 0.25*e3 && e4 >= -0.35*e3, projOk = proj > p3.p;
-  if(!ewoBig) return null;
-  const fib = inR(r4, 0.22, 0.40);
-  const ci2 = minIn(O.ci, p1.i, p2.i), ci4 = minIn(O.ci, p3.i, w4end);
-  const hidden = p4.p > p2.p && ci2 != null && ci4 != null && ci4 < ci2;
-  const rsi4 = minIn(O.rsi, p3.i, w4end);
-  const checks = [
-    {k:'uslov', ok: true, t:`Talas 3 ima najveći EWO (${e3.toFixed(2)} prema ${e1.toFixed(2)} u talasu 1)`},
-    {k:'uslov', ok: inR(r4, 0.2, 0.45), t:`Talas 4 je plitak: ${pct(r4)} talasa 3 (zona 23.6–38.2%), ne ulazi u talas 1`},
-    {k:'uslov', ok: r2 >= 0.5 && r4 <= 0.45 ? true : null, t:`Alternacija: talas 2 ${pct(r2)}, talas 4 ${pct(r4)} (proveri i oblik)`},
-    {k:'uslov', ok: ewoZero, t:`EWO se u talasu 4 vratio do nule, ne duboko ispod (${e4.toFixed(2)}, granica −0.35 × vrh talasa 3)`},
-    {k:'uslov', ok: projOk, t: projOk ? 'Projekcija 1.0 × talas 1 od kraja 4 je iznad vrha talasa 3 (nema rizika skraćenja)' : 'Projekcija 1.0 × talas 1 od kraja 4 je ispod vrha talasa 3: rizik skraćene pete (truncation), preskačem'},
-    {k:'uslov', id:'sub', w:[2,3,5], ok:null, t:'Talas 3 ima 5 podtalasa'},
-    {k:'uslov', id:'sub', w:[3,4,3], ok:null, soft:true, t:'Talas 4 ima 3 podtalasa (ili je trougao)'},
-    {k:'bod', ok: fib, t:'Fibonacci zona'},
-    {k:'bod', ok: ewoZero, t:'EWO se ponaša kako setup traži'},
-    {k:'bod', ok: hidden, t:'Skrivena divergencija (dno 4 iznad dna 2, Composite Index niže)'},
-    {k:'bod', ok: rsi4 != null && rsi4 > 40, t:`RSI u talasu 4 iznad 40 (min ${rsi4 != null ? rsi4.toFixed(0) : '–'})`},
-  ];
-  const cap = len3 < len1 ? p4.p + len3 : Infinity;                       // 3 ne sme biti najkraći → 5 < 3
-  const t1 = Math.min(p4.p + 0.618*len1, p3.p), t2 = Math.min(proj, cap), t2alt = Math.min(p4.p + 0.618*(p3.p-p0.p), cap);
-  if(len3 >= 1.618*len1) checks.push({k:'info', ok:true, t:`Talas 3 je produžen (${(len3/len1).toFixed(2)} × talas 1): talas 5 je obično ≈ talas 1 (cilj 2).`});
-  if(len3 < len1) checks.push({k:'info', ok:true, t:'Talas 3 je kraći od talasa 1, pa talas 5 mora biti kraći od talasa 3: cilj 2 je ograničen na dužinu talasa 3.'});
-  if(len3 >= 2.618*len1) checks.push({k:'info', ok:null, t:'Vrlo jak talas 3: peta može biti skraćena (truncation). Na cilju 1 obavezno pomeri stop.'});
-  const base = {setup:3, up:true, pts, labels:'01234', checks, inval:p1.p,
-    alt:'Talas 4 se razvija u složeniju korekciju (trougao ili kombinacija). Tada čekaj kraj e ili proboj linije b–d.'};
-  if(caseA){
-    if(r4 < 0.1 || r4 > 0.45) return null;
-    if(r4 < 0.2) return {...base, phase:'B', status:`Talas 4 je u toku (${pct(r4)}). Zona 23.6–38.2% je niže.`, zone:[p3.p-0.236*len3, p3.p-0.382*len3], t1, t2};
-    return {...base, phase:'A', status:'Talas 4 je u zoni. Čekam kraj talasa C (5 podtalasa), pa 5–3 u smeru trenda na manjem TF-u.',
-      zone:[p3.p-0.236*len3, p3.p-0.382*len3], entry:close, stop:Math.min(p4.p, close)-buf, t1, t2, t2alt};
-  }
-  if(!inR(r4, 0.2, 0.45)) return null;
-  if(close < p3.p) return {...base, phase:'A', status:'Talas 4 je verovatno završen. Ulaz posle 5–3 na manjem TF-u.', entry:close, stop:p4.p-buf, t1, t2, t2alt};
-  return {...base, phase:'B', status:'Talas 5 je u toku. Setup 1 dolazi kad se završi.', t1, t2};
-}
-
-const MAX_AGE = 40, BRANCH = 3, SCALES = [1, 2, 3.5, 6];
-function detectAll(O){
-  const out = [], P = O.P, n = P.length, L = O.last;
-  const atrs = O.atr.slice(-100).filter(x => x != null).sort((a,b) => a-b);
-  const atrMed = atrs[atrs.length >> 1] || 0, minLeg = 2*atrMed;
-  const push = (r, extra) => { if(r) out.push(mkCand(O, r)); };
-  for(const j of anchors(O, 'H', MAX_AGE)){
-    for(const pts of backChains(O, P, j, ['L','H','L','H','L','H'], minLeg, BRANCH)) push(evalS1(O, pts, j === n-1));
-  }
-  for(const j of anchors(O, 'L', MAX_AGE)){
-    const caseA = j === n-1;
-    for(const pts of backChains(O, P, j, ['L','H','L'], minLeg, BRANCH)){
-      if(maxIn(O.h, pts[1].i, L) > pts[1].p + 1e-12) continue;          // vrh talasa 1 već probijen
-      push(evalS2(O, pts, caseA, 5*atrMed));
-    }
-    for(const pts of backChains(O, P, j, ['L','H','L','H','L'], minLeg, BRANCH)) push(evalS3(O, pts, caseA));
-  }
-  return out;
-}
-
-function analyzeTF(c){
-  if(!c || c.length < 80) return {cands: [], ind: null};
-  const ind = indicators(c);
-  const all = [];
-  for(const k of SCALES){                                  // više skala ZigZag-a = više stepena talasa
-    const piv = zigzag(c, ind.atr, k), fine = zigzag(c, ind.atr, Math.max(0.75, k/2));
-    for(const sgn of [1, -1]) for(const cand of detectAll(orient(c, ind, piv, fine, sgn))){ cand.k = k; all.push(cand); }
-  }
-  // isti setup/smer → zadrži do 3 različita counta; konačan izbor tek posle provere podtalasa (pickBest)
-  const groups = {};
-  for(const c2 of all){
-    const key = c2.setup + c2.dir + (c2.trunc ? 'T' : '');
-    c2._key = key; c2._sc = candScore(c2);
-    const sig = c2.pts.map(p => p.i).join(',');
-    const g = groups[key] || (groups[key] = []);
-    if(!g.some(x => x._sig === sig)){ c2._sig = sig; g.push(c2); }
-  }
-  const cands = Object.values(groups).flatMap(g => g.sort((a,b) => b._sc - a._sc).slice(0, 3));
-  return {cands, ind};
-}
-function candScore(c2){
-  const size = Math.abs(c2.pts[c2.pts.length-1].i - c2.pts[0].i);
-  const failed = c2.checks.filter(x => x.k === 'uslov' && x.ok === false).length;
-  return (c2.phase === 'A' ? 1000 : 0) - failed*400 + c2.checks.filter(x => x.k === 'bod' && x.ok).length*100 + Math.min(size, 99);
-}
-function pickBest(r){
-  const best = {};
-  for(const c2 of r.cands){ c2._sc = candScore(c2); if(!best[c2._key] || c2._sc > best[c2._key]._sc) best[c2._key] = c2; }
-  r.cands = Object.values(best);
-  return r;
-}
-
-/* ====================== timeframe i niži stepen ====================== */
-const TF = {'1m':{iv:'1',min:1}, '5m':{iv:'5',min:5,low:'1m'}, '15m':{iv:'15',min:15,low:'5m'}, '30m':{iv:'30',min:30,low:'5m'},
-            '1h':{iv:'60',min:60,low:'15m'}, '2h':{iv:'120',min:120,low:'30m'}, '4h':{iv:'240',min:240,low:'1h'}};
-const TF_CHOICES = ['5m','15m','30m','1h','2h','4h'];
-
-function zzHL(h, l, at, k, s, e){
-  const piv = []; let dir = 0, hi = s, lo = s;
-  for(let i = s+1; i <= e; i++){
-    const th = k * (at[i] != null ? at[i] : (h[i] - l[i]));
-    if(dir === 0){
-      if(h[i] > h[hi]) hi = i;
-      if(l[i] < l[lo]) lo = i;
-      if(h[hi] - l[lo] >= th){ if(hi > lo){ piv.push({i:lo, p:l[lo], t:'L'}); dir = 1; } else { piv.push({i:hi, p:h[hi], t:'H'}); dir = -1; } }
-    } else if(dir === 1){
-      if(h[i] >= h[hi]) hi = i;
-      else if(h[hi] - l[i] >= th){ piv.push({i:hi, p:h[hi], t:'H'}); dir = -1; lo = i; }
-    } else {
-      if(l[i] <= l[lo]) lo = i;
-      else if(h[i] - l[lo] >= th){ piv.push({i:lo, p:l[lo], t:'L'}); dir = 1; hi = i; }
-    }
-  }
-  return piv;
-}
-
-/* Podtalasi pokreta NAGORE od s (dno) do e (vrh) u nizovima h/l.
-   want = 5 → impuls ili dijagonala, want = 3 → zigzag ili flat. */
-function subWaves(h, l, at, s, e, want){
-  if(e - s < (want === 5 ? 8 : 4)) return {kind:null, why:'premalo sveća na nižem TF-u'};
-  const S = {i:s, p:l[s]}, E = {i:e, p:h[e]}, total = E.p - S.p;
-  if(!(total > 0)) return {kind:null, why:'nema pokreta'};
-  const up = (a, b) => minIn(l, a.i, b.i) >= a.p - 1e-12 && maxIn(h, a.i, b.i) <= b.p + 1e-12;   // a dno, b vrh
-  const dn = (a, b) => maxIn(h, a.i, b.i) <= a.p + 1e-12 && minIn(l, a.i, b.i) >= b.p - 1e-12;   // a vrh, b dno
-  let diag = null, sawInterior = false;
-  for(const k of [3, 1.5, 0.75]){
-    const P = zzHL(h, l, at, k, s, e).filter(p => p.i > s && p.i < e);
-    if(P.length) sawInterior = true;
-    if(P.length > 48) continue;
-    const Hs = P.filter(p => p.t === 'H'), Ls = P.filter(p => p.t === 'L');
-    if(want === 5){
-      for(const H1 of Hs){ if(!up(S, H1)) continue; const len1 = H1.p - S.p; if(len1 < 0.1*total) continue;
-        for(const L2 of Ls){ if(L2.i <= H1.i || L2.p <= S.p || !dn(H1, L2) || (H1.p - L2.p) < 0.15*len1) continue;
-          for(const H3 of Hs){ if(H3.i <= L2.i || H3.p <= H1.p || !up(L2, H3)) continue; const len3 = H3.p - L2.p;
-            for(const L4 of Ls){ if(L4.i <= H3.i || !dn(H3, L4) || !up(L4, E) || E.p <= H3.p || (H3.p - L4.p) < 0.1*len3) continue;
-              const len5 = E.p - L4.p;
-              if(len3 < len1 && len3 < len5) continue;
-              if(Math.min(len3, len5) < 0.1*total) continue;
-              const pts = [S, H1, L2, H3, L4, E];
-              if(L4.p > H1.p) return {kind:'impuls', pts, labels:['','i','ii','iii','iv','v'], len:[len1, len3, len5]};
-              const conv = len1 > len3 && len3 > len5, expd = len1 < len3 && len3 < len5;
-              if(!diag && L4.p > L2.p && (conv || expd)) diag = {kind: conv ? 'dijagonala (sužava se)' : 'dijagonala (širi se)', pts, labels:['','i','ii','iii','iv','v'], len:[len1, len3, len5]};
-            }
-          }
-        }
-      }
-    } else {
-      for(const A of Hs){ if(!up(S, A)) continue; const lenA = A.p - S.p; if(lenA < 0.236*total) continue;
-        for(const B of Ls){ if(B.i <= A.i || !dn(A, B) || !up(B, E)) continue;
-          const rB = (A.p - B.p)/lenA; if(rB < 0.236 || B.p < S.p - 0.382*lenA) continue;
-          const pts = [S, A, B, E], labels = ['','a','b','c'];
-          if(rB >= 0.9) return {kind: B.p < S.p ? 'prošireni flat' : 'flat', pts, labels};
-          if(E.p > A.p) return {kind:'zigzag', pts, labels};
-        }
-      }
-    }
-  }
-  if(diag) return diag;
-  if(want === 3 && !sawInterior) return {kind:null, why:'korekcija u jednom potezu: možda je gotov samo talas a'};
-  return {kind:null, why: want === 5 ? 'nije nađeno 5 podtalasa po pravilima' : 'nije nađena jasna a–b–c struktura'};
-}
-
-/* Talas cand.pts[a] → cand.pts[b] na nižem TF-u (lc). */
-function subFor(cand, lc, lat, tfMin, a, b, want){
-  const pa = cand.pts[a], pb = cand.pts[b], sg = cand.sgn, ms = tfMin*60e3;
-  if(!lc.length || lc[0].t > pa.t) return {kind:null, nodata:true, why:'niži TF nema dovoljno istorije'};
-  let h = lc.map(x => sg > 0 ? x.h : -x.l), l = lc.map(x => sg > 0 ? x.l : -x.h);
-  const upMove = pb.p*sg > pa.p*sg;
-  if(!upMove){ const h2 = l.map(v => -v), l2 = h.map(v => -v); h = h2; l = l2; }
-  // prozor ±1 sveća višeg TF-a oko pivota, da se nađe pravi ekstrem na nižem TF-u
-  const win = (t, toEnd) => { let i0 = lc.findIndex(x => x.t >= t - ms); if(i0 < 0) i0 = lc.length-1; let i1 = i0; while(i1+1 < lc.length && (toEnd || lc[i1+1].t < t + 2*ms)) i1++; return [i0, i1]; };
-  const [a0, a1] = win(pa.t, false), [b0, b1] = win(pb.t, b === cand.pts.length-1);
-  let s = a0; for(let i = a0; i <= a1; i++) if(l[i] < l[s]) s = i;
-  let e = s+1; for(let i = s+1; i <= b1; i++) if(h[i] > h[e]) e = i;      // kraj = pravi ekstrem celog pokreta
-  for(let i = a0; i < e; i++) if(l[i] < l[s]) s = i;
-  if(e <= s) return {kind:null, why:'premalo sveća na nižem TF-u'};
-  const r = subWaves(h, l, lat, s, e, want);
-  if(r.pts){
-    const back = v => (upMove ? v : -v) * sg;
-    r.real = r.pts.map((p, k) => ({t: lc[p.i].t, p: back(p.p), n: r.labels[k]}));
-  }
-  return r;
-}
-
-function applySub(cand, lc, lat, tf){
-  const low = TF[tf].low, tfMin = TF[tf].min;
-  for(const ch of cand.checks){
-    if(ch.id !== 'sub') continue;
-    const [a, b, want] = ch.w, r = subFor(cand, lc, lat, tfMin, a, b, want);
-    if(r.kind){
-      ch.ok = true; ch.t += ` → ${low}: ${r.kind}`;
-      if(r.real) cand.subs.push(r.real);
-      if(cand.setup === 1 && want === 5 && /dijagonala/.test(r.kind)) cand.notes.push(`Završna dijagonala: cilj 2 je početak dijagonale (${fp(cand.pts[4].p)}), a preokret je obično brz.`);
-      if(cand.setup === 1 && want === 5 && r.kind === 'impuls' && r.real && cand.checks.some(x => /Produžen je talas 5/.test(x.t))) cand.t2alt = r.real[2].p;
-    } else {
-      ch.ok = r.nodata || ch.soft ? null : false;
-      ch.t += ` → ${low}: ${r.why}`;
-      if(cand.trunc && want === 5) ch.ok = false;
-    }
-  }
-}
-
-/* ====================== kontekst i ocena ====================== */
-function fund8(t, inst){ const iv = inst && inst.fundingInterval ? +inst.fundingInterval : 480; return (+t.fundingRate) * (480/iv) * 100; }
-
-function finalize(cand, coin, ctx){
-  const alt = coin.sym !== 'BTCUSDT';
-  const ext = S.fundingExt, f = coin.f8;
-  let ok = true; const why = [];
-  if(alt && ctx.btc){
-    if(ctx.btc.bias !== cand.dir){ ok = false; why.push('BTC prednost je ' + ctx.btc.bias); }
-    if(ctx.btc.strong && ctx.btc.strongDir !== cand.dir) cand.blocks.push('BTC je u jakom impulsu protiv ovog smera (heuristika: EWO i RSI na 1h).');
-  }
-  if(alt && cand.dir === 'LONG' && DAY.ctx.total3w5) cand.blocks.push('TOTAL3 je u talasu 5 sa divergencijom: nema longova na altcoinima.');
-  if(alt && DAY.ctx.domUp && cand.dir === 'LONG'){ ok = false; why.push('BTC.D i USDT.D rastu'); }
-  if(f != null){
-    if(cand.dir === 'LONG' && f >= ext){ ok = false; why.push('funding ekstremno pozitivan'); }
-    if(cand.dir === 'SHORT' && f <= -ext){ ok = false; why.push('funding ekstremno negativan'); }
-  }
-  cand.checks.push({k:'bod', ok, t:'Kontekst: BTC, TOTAL3, OI i funding nisu protiv' + (why.length ? ' (' + why.join(', ') + ')' : '')});
-  // potvrde (informativno)
-  if(cand.setup === 1 && f != null && ((cand.dir === 'SHORT' && f >= ext) || (cand.dir === 'LONG' && f <= -ext))) cand.checks.push({k:'info', ok:true, t:`Potvrda: ekstreman funding (${f.toFixed(3)}% / 8h)`});
-  if(cand.setup === 1 && coin.px4 != null && coin.trueOI != null && ((cand.dir === 'SHORT' && coin.px4 > 0 && coin.trueOI < 0) || (cand.dir === 'LONG' && coin.px4 < 0 && coin.trueOI < 0))) cand.checks.push({k:'info', ok:true, t:'Potvrda: cena ide u smeru impulsa, a pravi OI pada'});
-  if(cand.setup === 2 && coin.oi4 != null && coin.oi4 <= -S.oiThr) cand.checks.push({k:'info', ok:true, t:'Potvrda: nagli pad OI na kraju talasa 2'});
-  if(cand.setup === 2 && f != null && ((cand.dir === 'LONG' && f < 0) || (cand.dir === 'SHORT' && f > 0.02))) cand.checks.push({k:'info', ok:true, t:'Potvrda: funding protiv gomile na kraju talasa 2'});
-
-  cand.points = cand.checks.filter(x => x.k === 'bod' && x.ok).length;
-  cand.mand = [];
-  if(cand.entry != null){
-    if(!(cand.rr1 >= 1)) cand.mand.push(`Do cilja 1 je ${cand.rr1 != null ? cand.rr1.toFixed(2) : '–'}:1, a treba bar 1:1`);
-    if(!(cand.rr2 >= 2)) cand.mand.push(`Do cilja 2 je ${cand.rr2 != null ? cand.rr2.toFixed(2) : '–'}:1, a treba bar 2:1`);
-    if(cand.stopPct < S.minStopPct) cand.mand.push(`Stop je ${cand.stopPct.toFixed(2)}%, bliži od ${S.minStopPct}%: preskoči ili pređi na veći TF`);
-  }
-  const failedCond = cand.checks.filter(x => x.k === 'uslov' && x.ok === false).map(x => x.t);
-  cand.failedCond = failedCond;
-  if(cand.phase === 'A' && cand.points < 4) cand.mand.push(`Ocena ${cand.points}/5: sa 3 ili manje nema trejda`);
-  cand.isA = cand.phase === 'A' && !cand.blocks.length && !cand.mand.length && !failedCond.length;
-  let mult = cand.points >= 5 ? 1 : cand.points === 4 ? 0.5 : 0;
-  if(mult && ddMode()) mult = Math.min(mult, 0.5);
-  cand.mult = mult;
-  if(cand.entry != null && mult){
-    const riskUsd = S.balance * S.riskPct/100 * mult;
-    cand.riskUsd = riskUsd;
-    cand.size = riskUsd / ((cand.stopPct + S.feesPct)/100);
-    cand.lev = cand.size / (S.curBalance > 0 ? S.curBalance : S.balance);
-  }
-  return cand;
-}
-
-function btcContext(k4, k1){
-  const i1 = indicators(k1), i4 = indicators(k4);
-  const L1 = k1.length-1, L4 = k4.length-1;
-  const e1 = i1.ewo[L1], e4 = i4.ewo[L4], r1 = i1.rsi[L1];
-  const absE = i1.ewo.filter(x => x != null).map(Math.abs).sort((a,b) => a-b);
-  const p90 = absE[Math.floor(absE.length*0.9)] || Infinity;
-  const strong = Math.abs(e1) >= p90 && (r1 >= 65 || r1 <= 35);
-  return {
-    price: k1[L1].c, e1, e4, r1, bias: e1 > 0 ? 'LONG' : 'SHORT', strong, strongDir: e1 > 0 ? 'LONG' : 'SHORT',
-    c4: pickBest(analyzeTF(k4)).cands, c1: pickBest(analyzeTF(k1)).cands
-  };
-}
-
-/* ====================== skeniranje ====================== */
-let lastResult = null, scanning = false;
-function setStatus(t){ $('#status').textContent = t; }
-function setProg(f){ $('#prog').style.width = (f*100).toFixed(1) + '%'; }
 function symList(str){ return (str || '').split(/[,;\s]+/).map(s => s.trim().toUpperCase().replace(/\.P$/, '')).filter(Boolean).map(s => s.endsWith('USDT') ? s : s + 'USDT'); }
 
+/* ---------- skeniranje: korak 3 (likvidnost) i korak 4 (aktivnost) ---------- */
+let R = null, scanning = false;
+const setStatus = t => { $('#status').textContent = t; };
+const setProg = f => { $('#prog').style.width = (f*100).toFixed(1) + '%'; };
+
 async function scan(){
-  if(scanning) return; scanning = true; $('#scanBtn').disabled = true;
+  if(scanning) return; scanning = true; $('#scanBtn').disabled = true; $('#err').textContent = '';
   try{
     await detectApi();
-    setStatus('Učitavam ugovore i tikere…'); setProg(0.03);
+    setStatus('Učitavam ugovore i tikere…'); setProg(0.05);
     const [inst, tick] = await Promise.all([instruments(), api('/v5/market/tickers', {category:'linear'})]);
     const instMap = Object.fromEntries(inst.map(x => [x.symbol, x]));
-    const now = Date.now(), excl = new Set(symList(DAY.exclude));
-    const rej = {likvidnost:0, starost:0, delisting:0, iskljuceno:0};
+    const now = Date.now(), excl = new Set(symList(LS.get('exclude', '')));
+    const rej = {likvidnost:0, novi:0, delisting:0, iskljuceno:0};
     const coins = [];
     for(const t of tick.list || []){
       const ins = instMap[t.symbol];
-      if(!ins || ins.contractType !== 'LinearPerpetual' || ins.quoteCoin !== 'USDT' || ins.status !== 'Trading') continue;
+      if(!ins || ins.contractType !== 'LinearPerpetual' || ins.quoteCoin !== 'USDT' || ins.status !== 'Trading') continue;   // samo USDT.P
+      const iv = +ins.fundingInterval || 480;
       const c = {sym: t.symbol, price: +t.lastPrice, ch24: +t.price24hPcnt*100, oiv: +t.openInterestValue, oi: +t.openInterest,
-                 turn: +t.turnover24h, f8: fund8(t, ins), ageD: (now - +ins.launchTime)/864e5};
+                 turn: +t.turnover24h, f8: (+t.fundingRate)*(480/iv)*100, ageD: (now - +ins.launchTime)/864e5};
       if(excl.has(c.sym)){ rej.iskljuceno++; continue; }
       if(+ins.deliveryTime > 0){ rej.delisting++; continue; }
-      if(c.ageD < S.minAgeDays){ rej.starost++; continue; }
+      if(c.ageD < S.minAgeDays){ rej.novi++; continue; }
       if(c.oiv < S.minOI || c.turn < S.minTurnover){ rej.likvidnost++; continue; }
       coins.push(c);
     }
@@ -933,300 +290,136 @@ async function scan(){
     await pool(coins, 6, async c => {
       const [oiR, kl] = await Promise.all([
         api('/v5/market/open-interest', {category:'linear', symbol:c.sym, intervalTime:'1h', limit:6}),
-        klines(c.sym, '60', 6)
+        api('/v5/market/kline', {category:'linear', symbol:c.sym, interval:'60', limit:6})
       ]);
       const ol = oiR.list || [];
       if(ol.length){ const o = ol.reduce((a,b) => Math.abs(+b.timestamp - t4) < Math.abs(+a.timestamp - t4) ? b : a); if(+o.openInterest > 0) c.oi4 = (c.oi / +o.openInterest - 1)*100; }
-      if(kl.length){ const k = kl.reduce((a,b) => Math.abs(b.t - t4) < Math.abs(a.t - t4) ? b : a); if(k.o > 0) c.px4 = (c.price / k.o - 1)*100; }
+      const kl2 = (kl.list || []).map(x => ({t:+x[0], o:+x[1]}));
+      if(kl2.length){ const k = kl2.reduce((a,b) => Math.abs(b.t - t4) < Math.abs(a.t - t4) ? b : a); if(k.o > 0) c.px4 = (c.price / k.o - 1)*100; }
       if(c.oi4 != null && c.px4 != null) c.trueOI = c.oi4 - c.px4;
-    }, (d, n) => setProg(0.05 + 0.5*d/n));
+    }, (d, n) => setProg(0.1 + 0.9*d/n));
 
-    // korak 4: prag OI
+    // prag OI: 5% → 8% ako ih je previše, 3% ako ih je manje od 5
     const withOI = coins.filter(c => c.oi4 != null);
-    let thr = S.oiThr;
     const cnt = th => withOI.filter(c => Math.abs(c.oi4) >= th).length;
+    let thr = S.oiThr;
     if(cnt(thr) > S.keepMax) thr = S.oiThrHigh; else if(cnt(thr) < 5) thr = S.oiThrLow;
-    let sel = withOI.filter(c => Math.abs(c.oi4) >= thr).map(c => (c.src = [c.oi4 > 0 ? 'OI raste' : 'OI pada'], c));
-    sel.sort((a,b) => Math.abs(b.trueOI) - Math.abs(a.trueOI));
-    sel = sel.slice(0, S.keepMax);
-    const has = new Set(sel.map(c => c.sym));
-    const bySym = Object.fromEntries(coins.map(c => [c.sym, c]));
-    const sorted = [...coins].sort((a,b) => b.ch24 - a.ch24);
-    const add = (c, tag) => { if(!c) return; if(!has.has(c.sym)){ c.src = []; sel.push(c); has.add(c.sym); } if(!c.src.includes(tag)) c.src.push(tag); };
-    sorted.slice(0, S.topMovers).forEach(c => add(c, 'rast 24h'));
-    sorted.slice(-S.topMovers).forEach(c => add(c, 'pad 24h'));
-    for(const s of symList(S.always)) if(s !== 'BTCUSDT') add(bySym[s], 'uvek');
+    for(const c of coins) c.tags = [];
+    const oiUp = withOI.filter(c => c.oi4 >= thr), oiDown = withOI.filter(c => c.oi4 <= -thr);
+    oiUp.forEach(c => c.tags.push('OI raste')); oiDown.forEach(c => c.tags.push('OI pada'));
+    const byCh = [...coins].sort((a,b) => b.ch24 - a.ch24);
+    const gain = byCh.slice(0, 10), loss = byCh.slice(-10).reverse();
+    gain.slice(0, S.topMovers).forEach(c => c.tags.push('rast 24h'));
+    loss.slice(0, S.topMovers).forEach(c => c.tags.push('pad 24h'));
+    // lista za danas: OI filteri (najviše keepMax po |pravi OI|) + najveći rast/pad + uvek
+    let list = [...oiUp, ...oiDown].sort((a,b) => Math.abs(b.trueOI ?? 0) - Math.abs(a.trueOI ?? 0)).slice(0, S.keepMax);
+    const has = new Set(list.map(c => c.sym)), bySym = Object.fromEntries(coins.map(c => [c.sym, c]));
+    const add = c => { if(c && !has.has(c.sym)){ list.push(c); has.add(c.sym); } };
+    gain.slice(0, S.topMovers).forEach(add); loss.slice(0, S.topMovers).forEach(add);
+    for(const s of symList(S.always)){ const c = bySym[s]; if(c){ if(!c.tags.includes('uvek')) c.tags.push('uvek'); add(c); } }
 
-    setStatus('BTC kontekst (4h i 1h)…');
-    const [bk4, bk1] = await Promise.all([klines('BTCUSDT', '240', 300), klines('BTCUSDT', '60', 300)]);
-    const ctx = {btc: btcContext(bk4, bk1)};
-
-    const tfs = TF_SEL.slice();
-    setStatus(`EW analiza za ${sel.length} coinova (${tfs.join(', ')}, podtalasi na nižem TF-u)…`);
-    await pool(sel, 4, async c => {
-      c.k = {}; c.tf = {}; const lowCache = {};
-      for(const tf of tfs){
-        c.k[tf] = await klines(c.sym, TF[tf].iv, 300);
-        const r = analyzeTF(c.k[tf]); c.tf[tf] = r;
-        if(r.cands.length){
-          const low = TF[tf].low;
-          const lc = lowCache[low] || (lowCache[low] = await klines(c.sym, TF[low].iv, 1000));
-          const lat = atr(lc, 14);
-          for(const cand of r.cands) applySub(cand, lc, lat, tf);
-        }
-        pickBest(r);
-      }
-    }, (d, n) => setProg(0.6 + 0.4*d/n));
-
-    lastResult = {at: new Date(), sel, ctx, thr, total: coins.length, rej, tfs};
-    renderAll();
-    setStatus(`Skenirano u ${lastResult.at.toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'})}. Likvidnih ${coins.length}, izabrano ${sel.length}, prag OI ${thr}%.`);
+    R = {at: new Date(), thr, coins, rej, sets: {lista: list, oiUp, oiDown, gain, loss, svi: coins}};
+    render();
+    setStatus(`Skenirano u ${R.at.toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'})}. Likvidnih ${coins.length}, prag OI ${thr}%.`);
   }catch(e){
-    setStatus('Greška: ' + e.message);
-    console.error(e);
+    $('#err').textContent = e.message; setStatus('Skeniranje nije uspelo.'); console.error(e);
   }finally{
-    scanning = false; $('#scanBtn').disabled = false; setProg(0); setTimeout(() => setProg(0), 300);
+    scanning = false; $('#scanBtn').disabled = false; setTimeout(() => setProg(0), 300);
   }
 }
 
-/* ====================== prikaz ====================== */
-function fp(x){
-  if(x == null || !isFinite(x)) return '–';
-  const a = Math.abs(x);
-  const d = a >= 1000 ? 2 : a >= 100 ? 3 : a >= 1 ? 4 : a >= 0.01 ? 5 : 7;
-  return x.toFixed(d);
-}
+/* ---------- prikaz ---------- */
+const FILTERS = [['lista','Lista za danas'], ['oiUp','OI raste'], ['oiDown','OI pada'], ['gain','Rast 24h'], ['loss','Pad 24h'], ['svi','Svi likvidni']];
+let filter = LS.get('filter', 'lista'), sortKey = LS.get('sort', 'trueOI');
+if(!FILTERS.some(f => f[0] === filter)) filter = 'lista';
+$('#sort').value = sortKey;
+$('#sort').addEventListener('change', e => { sortKey = e.target.value; LS.set('sort', sortKey); render(); });
+
+function fp(x){ if(x == null || !isFinite(x)) return '–'; const a = Math.abs(x); return x.toFixed(a >= 1000 ? 2 : a >= 100 ? 3 : a >= 1 ? 4 : a >= 0.01 ? 5 : 7); }
 const fpc = (x, d=1) => x == null || !isFinite(x) ? '–' : (x > 0 ? '+' : '') + x.toFixed(d) + '%';
 const cls = x => x == null ? '' : x > 0 ? 'pos' : x < 0 ? 'neg' : '';
 const fm = x => x >= 1e9 ? (x/1e9).toFixed(2) + 'B' : x >= 1e6 ? (x/1e6).toFixed(1) + 'M' : (x/1e3).toFixed(0) + 'K';
-const SETUP_NAME = {1:'Setup 1 — Kraj impulsa', 2:'Setup 2 — Ulaz u talas 3', 3:'Setup 3 — Ulaz u talas 5'};
-const tvLink = s => `https://www.tradingview.com/chart/?symbol=BYBIT:${encodeURIComponent(s)}.P`;
+const tvSym = s => `BYBIT:${s}.P`;
+const tvLink = s => `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSym(s))}`;
 const bbLink = s => `https://www.bybit.com/trade/usdt/${encodeURIComponent(s)}`;
 
-function chartSVG(c, ind, cand, tfMin){
-  const W = 640, PH = 210, EH = 54, GAP = 8, H = PH + GAP + EH, padL = 4, padR = 92, padT = 8;
-  const from = Math.max(0, Math.min(cand.startI - 8, c.length - 60)), bars = c.slice(from), n = bars.length;
-  const levels = [cand.stop, cand.inval, cand.t1, cand.t2, cand.entry, ...(cand.zone || [])].filter(v => v != null && isFinite(v));
-  let lo = Math.min(...bars.map(b => b.l)), hi = Math.max(...bars.map(b => b.h));
-  const span0 = hi - lo;
-  for(const v of levels){ if(v > lo - span0 && v < hi + span0){ lo = Math.min(lo, v); hi = Math.max(hi, v); } }
-  const pad = (hi - lo)*0.04; lo -= pad; hi += pad;
-  const cw = (W - padL - padR)/n;
-  const x = i => padL + (i - from + 0.5)*cw;
-  const y = p => padT + (hi - p)/(hi - lo)*(PH - padT*2);
-  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Grafik ${esc(cand.dir)} predloga">`;
-  // oznake nivoa: razmakni ih da se ne preklapaju, a mrežne cene preskoči ako su preblizu
-  const lv = [[cand.t1,'svg-tgt','C1'],[cand.t2,'svg-tgt','C2'],[cand.stop,'svg-stop','Stop']];
-  if(cand.inval !== cand.stop) lv.push([cand.inval,'svg-inv','Inval.']);
-  const lab = lv.filter(([v]) => v != null && v >= lo && v <= hi).map(([v,c2,t]) => ({v, c2, t, y: y(v)})).sort((a,b) => a.y - b.y);
-  for(let q = 1; q < lab.length; q++) if(lab[q].y - lab[q-1].y < 12) lab[q].y = lab[q-1].y + 12;
-  for(let g = 0; g <= 4; g++){
-    const yy = padT + g*(PH - padT*2)/4; s += `<line class="svg-grid" x1="${padL}" x2="${W-padR}" y1="${yy}" y2="${yy}"/>`;
-    if(!lab.some(a => Math.abs(a.y - yy) < 11)) s += `<text class="svg-txt" x="${W-padR+4}" y="${yy+3}">${esc(fp(hi - g*(hi-lo)/4))}</text>`;
-  }
-  if(cand.zone){ const [a,b] = cand.zone; s += `<rect class="svg-zone" x="${padL}" width="${W-padL-padR}" y="${y(Math.max(a,b))}" height="${Math.max(1, Math.abs(y(a)-y(b)))}"/>`; }
-  const bw = Math.max(1, cw*0.6);
-  bars.forEach((b, k) => {
-    const i = from + k, up = b.c >= b.o, cl = up ? 'svg-up' : 'svg-dn';
-    s += `<line class="${cl}" x1="${x(i)}" x2="${x(i)}" y1="${y(b.h)}" y2="${y(b.l)}" stroke-width="1"/>`;
-    s += `<rect class="${cl}" x="${x(i)-bw/2}" width="${bw}" y="${y(Math.max(b.o,b.c))}" height="${Math.max(0.8, Math.abs(y(b.o)-y(b.c)))}"/>`;
-  });
-  for(const a of lab) s += `<line class="${a.c2}" x1="${padL}" x2="${W-padR}" y1="${y(a.v)}" y2="${y(a.v)}"/><text class="svg-txt" x="${W-padR+4}" y="${a.y+3}" style="font-weight:600">${esc(a.t + ' ' + fp(a.v))}</text>`;
-  const fx = t => x((t - c[0].t)/(tfMin*60e3));                         // vreme nižeg TF-u → x
-  for(const sub of (cand.subs || [])){
-    const sp = sub.filter(p => p.t >= c[from].t);
-    s += `<polyline class="svg-sub" points="${sp.map(p => fx(p.t).toFixed(1) + ',' + y(p.p).toFixed(1)).join(' ')}"/>`;
-    sp.forEach((p, k) => { if(!p.n || k === sp.length-1) return;     /* kraj se poklapa sa glavnim pivotom */
-      const hiP = k + 1 < sp.length ? p.p > sp[k+1].p : p.p > sp[k-1].p;
-      s += `<text class="svg-sublbl" x="${fx(p.t).toFixed(1)}" y="${(hiP ? y(p.p)-4 : y(p.p)+11).toFixed(1)}" text-anchor="middle">${esc(p.n)}</text>`; });
-  }
-  const pts = cand.pts.filter(p => p.i >= from);
-  s += `<polyline class="svg-path" points="${pts.map(p => x(p.i).toFixed(1) + ',' + y(p.p).toFixed(1)).join(' ')}"/>`;
-  pts.forEach((p, k) => {
-    const isHigh = k + 1 < pts.length ? p.p > pts[k+1].p : (k > 0 ? p.p > pts[k-1].p : true);
-    s += `<text class="svg-lbl" x="${x(p.i)}" y="${isHigh ? y(p.p)-6 : y(p.p)+14}" text-anchor="middle">${esc(p.n)}</text>`;
-  });
-  // EWO
-  const ew = ind.ewo.slice(from), m = Math.max(1e-9, ...ew.filter(v => v != null).map(Math.abs));
-  const y0 = PH + GAP + EH/2;
-  s += `<line class="svg-grid" x1="${padL}" x2="${W-padR}" y1="${y0}" y2="${y0}"/><text class="svg-txt" x="${W-padR+4}" y="${y0+3}">EWO</text>`;
-  ew.forEach((v, k) => { if(v == null) return; const hh = v/m*(EH/2 - 2); s += `<rect class="${v >= 0 ? 'svg-ewo-up' : 'svg-ewo-dn'}" x="${x(from+k)-bw/2}" width="${bw}" y="${hh >= 0 ? y0-hh : y0}" height="${Math.abs(hh)}"/>`; });
-  return s + '</svg>';
+function interp(c){                                    // smer cene i OI za 4h
+  if(c.px4 == null || c.oi4 == null) return ['flat', '–'];
+  if(Math.abs(c.oi4) < 1 && Math.abs(c.px4) < 0.5) return ['flat', 'Mirno'];
+  if(c.oi4 >= 0) return c.px4 >= 0 ? ['up', 'Novi longovi'] : ['down', 'Novi shortovi'];
+  return c.px4 >= 0 ? ['up', 'Zatvaranje shortova'] : ['down', 'Zatvaranje longova'];
 }
-
-function checkLi(ch){
-  const ic = ch.ok === true ? ['ok','✓'] : ch.ok === false ? ['no','✗'] : ['q','?'];
-  return `<li><span class="ic ${ic[0]}">${ic[1]}</span><span>${esc(ch.t)}</span></li>`;
+function sortVal(c){
+  const v = {trueOI: c.trueOI, oi4: c.oi4, ch24: c.ch24, f8: c.f8, oiv: c.oiv}[sortKey];
+  return v == null ? -Infinity : sortKey === 'oiv' ? v : Math.abs(v);
 }
+function current(){ return R ? [...R.sets[filter]].sort((a,b) => sortVal(b) - sortVal(a)) : []; }
 
-function candCard(coin, tf, cand){
-  const c = coin.k[tf], ind = coin.tf[tf].ind;
-  const riskTxt = cand.mult ? `${cand.mult}R` : 'nema trejda';
-  const fmtRR = r => r == null ? '–' : r.toFixed(2) + ':1';
-  const kv = (l, v, cl2='') => `<div><span>${esc(l)}</span><b class="${cl2}">${v}</b></div>`;
-  const uslovi = cand.checks.filter(x => x.k === 'uslov'), bodovi = cand.checks.filter(x => x.k === 'bod'), info = cand.checks.filter(x => x.k === 'info');
-  return `<div class="setup">
-    <div class="top">
-      <span class="sym">${esc(coin.sym + '.P')}</span>
-      <span class="pill ${cand.dir === 'LONG' ? 'long' : 'short'}">${cand.dir}</span>
-      <span class="pill tf" title="Timeframe strukture; podtalasi na ${esc(TF[tf].low)}">${esc(tf)}</span>
-      <span>${esc(SETUP_NAME[cand.setup])}${cand.trunc ? ' (skraćena peta)' : ''}</span>
-      <span class="score">${cand.points}/5 → ${esc(riskTxt)}</span>
-    </div>
-    <div class="small" style="margin-top:4px">${esc(cand.status)}</div>
-    ${chartSVG(c, ind, cand, TF[tf].min)}
-    <p class="small muted" style="margin:4px 0 0">Struktura na ${esc(tf)}, podtalasi (isprekidano, i–v i a–b–c) na ${esc(TF[tf].low)}.</p>
-    <div class="kv">
-      ${kv('Ulaz (procena)', esc(fp(cand.entry)))}
-      ${cand.zone ? kv('Zona', esc(fp(Math.min(...cand.zone)) + ' – ' + fp(Math.max(...cand.zone)))) : ''}
-      ${kv('Stop', esc(fp(cand.stop)) + ` <span class="muted small">${cand.stopPct != null ? cand.stopPct.toFixed(2) + '%' : ''}</span>`, 'neg')}
-      ${kv('Invalidacija', esc(fp(cand.inval)))}
-      ${kv('Cilj 1', esc(fp(cand.t1)) + ` <span class="muted small">${fmtRR(cand.rr1)}</span>`, 'pos')}
-      ${kv('Cilj 2', esc(fp(cand.t2)) + ` <span class="muted small">${fmtRR(cand.rr2)}</span>`, 'pos')}
-      ${cand.t2alt != null ? kv('Cilj 2 (alt.)', esc(fp(cand.t2alt))) : ''}
-      ${cand.t3x != null ? kv('Ako se 3 produži', esc(fp(cand.t3x)) + ' <span class="muted small">2.618×</span>', 'pos') : ''}
-      ${kv('Pozicija', cand.size ? esc(Math.round(cand.size).toLocaleString('sr-RS')) + ' USDT' : '–')}
-      ${kv('Rizik / poluga', cand.size ? esc(Math.round(cand.riskUsd)) + ' USDT · ' + esc(cand.lev.toFixed(2)) + '×' : '–')}
-      ${kv('Funding 8h', esc(coin.f8 != null ? coin.f8.toFixed(4) + '%' : '–'), cls(coin.f8))}
-    </div>
-    <div class="grid2">
-      <div><h3>Uslovi</h3><ul class="checks">${uslovi.map(checkLi).join('')}</ul></div>
-      <div><h3>Bodovi (${cand.points}/5)</h3><ul class="checks">${bodovi.map(checkLi).join('')}</ul></div>
-    </div>
-    <h3>Obavezno, ručno</h3>
-    <ul class="checks">
-      ${checkLi({ok:null, t:'Glavni i alternativni count potvrđeni na TradingView-u'})}
-      ${checkLi({ok:null, t:'Strukturna potvrda: 5 pa 3 na manjem TF-u ili probijena linija'})}
-      ${info.map(checkLi).join('')}
-    </ul>
-    <p class="small" style="margin:8px 0 0"><b>Alternativni count na ${esc(tf)}:</b> ${cand.altCount ? esc(cand.altCount) : 'skener nije našao drugi važeći count'}</p>
-    ${cand.alt ? `<p class="small" style="margin:4px 0 0"><b>Šta bi poništilo glavni count:</b> ${esc(cand.alt)}</p>` : ''}
-    ${cand.notes.map(t => `<p class="small muted" style="margin:6px 0 0">${esc(t)}</p>`).join('')}
-    <div class="row small" style="margin-top:8px"><a href="${tvLink(coin.sym)}" target="_blank" rel="noopener">TradingView</a><a href="${bbLink(coin.sym)}" target="_blank" rel="noopener">Bybit</a></div>
-  </div>`;
-}
-
-function renderAll(){
-  if(!lastResult) return;
-  const {sel, ctx, thr, total, rej} = lastResult;
-  refreshBanners();
-  // BTC
-  const b = ctx.btc;
-  const describe = list => list.length ? list.map(c => `${SETUP_NAME[c.setup].split(' — ')[1]} (${c.dir}, ${c.phase})`).join('; ') : 'nema jasne strukture';
-  $('#btcBox').className = '';
-  $('#btcBox').innerHTML = `
-    <div class="row"><b style="font-size:16px">BTCUSDT.P ${esc(fp(b.price))}</b><span class="pill ${b.bias === 'LONG' ? 'long' : 'short'}">Prednost: ${b.bias === 'LONG' ? 'longovi' : 'shortovi'}</span></div>
-    <div class="kv">
-      <div><span>EWO 1h</span><b class="${cls(b.e1)}">${b.e1.toFixed(2)}</b></div>
-      <div><span>EWO 4h</span><b class="${cls(b.e4)}">${b.e4.toFixed(2)}</b></div>
-      <div><span>RSI 1h</span><b>${b.r1.toFixed(0)}</b></div>
-    </div>
-    ${b.strong ? `<div class="banner warn small">BTC je u jakom impulsu (${b.strongDir}). Ne trguj altcoine protiv njegovog smera.</div>` : ''}
-    <p class="small" style="margin:8px 0 0"><b>4h:</b> ${esc(describe(b.c4))}<br><b>1h:</b> ${esc(describe(b.c1))}</p>
-    <p class="small muted" style="margin:4px 0 0">Count na 4h i 1h potvrdi ručno.</p>`;
-
-  // kandidati
-  const blocked = !DAY.routine.rested || limitReason() || newsNear();
-  const A = [], B = [], C = [];
-  for(const coin of sel){
-    const cands = [];
-    for(const tf of lastResult.tfs){
-      const r = coin.tf && coin.tf[tf]; if(!r) continue;
-      const list = r.cands.map(cand => finalize(JSON.parse(JSON.stringify(cand)), coin, ctx));
-      // countovi koji ne krše nijedan uslov; jedan TF = jedan stepen
-      const valid = list.filter(c2 => !c2.failedCond.length).sort((a,b) => (b.phase === 'A') - (a.phase === 'A') || b.points - a.points);
-      const name = c2 => `${SETUP_NAME[c2.setup].split(' — ')[1]}${c2.trunc ? ' (skraćena peta)' : ''} ${c2.dir}`;
-      for(const c2 of list){
-        const others = valid.filter(o => o !== c2);
-        if(valid.length > 2 && valid.includes(c2)){
-          c2.mand.push(`Više od 2 moguća counta na ${tf} (${valid.map(name).join('; ')}): count nije jasan`);
-          c2.isA = false;
-        }
-        if(others.length) c2.altCount = others.slice(0, valid.length > 2 ? 3 : 1).map(o => `${name(o)}, ${o.phase === 'A' ? 'u zoni' : 'kasnije'}, ${o.points}/5`).join(' · ');
-        c2.nValid = valid.length;
-        cands.push({tf, cand: c2});
-      }
-    }
-    coin.cls = 'C';
-    const as = cands.filter(x => x.cand.isA);
-    if(as.length){ coin.cls = 'A'; as.sort((a,b) => b.cand.points - a.cand.points); A.push({coin, ...as[0], others: as.slice(1)}); coin.clsTf = as[0].tf; }
-    const rest = cands.filter(x => !x.cand.isA);
-    if(rest.length){ if(coin.cls === 'C'){ coin.cls = 'B'; coin.clsTf = rest[0].tf; } rest.forEach(x => B.push({coin, ...x})); }
-    if(coin.cls === 'C') C.push(coin);
-  }
-  A.sort((a,b) => b.cand.points - a.cand.points);
-  $('#aCount').textContent = `(${A.length})`;
-  $('#aList').innerHTML = (blocked && A.length ? `<div class="banner bad small" style="margin-top:10px">Danas ne trguješ (vidi upozorenja). Predlozi su samo za učenje.</div>` : '') +
-    (A.length ? A.map(x => candCard(x.coin, x.tf, x.cand) + (x.others.length ? `<p class="small muted">Još za ${esc(x.coin.sym + '.P')}: ${x.others.map(o => esc(SETUP_NAME[o.cand.setup]) + ' ' + esc(o.tf)).join(', ')}</p>` : '')).join('')
-              : '<div class="empty">Nema A setupa. Bez jasnog counta nema trejda.</div>');
-
-  const reason = cand => {
-    if(cand.blocks.length) return cand.blocks.join(' ');
-    if(cand.mand.length) return cand.mand.join('; ');
-    if(cand.phase === 'A' && cand.failedCond && cand.failedCond.length) return 'Nije ispunjeno: ' + cand.failedCond.join('; ');
-    return '';
-  };
-  B.sort((a,b) => (a.cand.phase === 'A' ? 0 : 1) - (b.cand.phase === 'A' ? 0 : 1));
-  $('#bList').innerHTML = (B.length ? B.map(x => {
-    const r = reason(x.cand);
-    const pill = x.cand.phase === 'A' ? '<span class="pill x">odbačen</span>' : '<span class="pill b">B</span>';
-    return `<div class="item">${pill}<b>${esc(x.coin.sym + '.P')}</b><span class="pill ${x.cand.dir === 'LONG' ? 'long' : 'short'}">${x.cand.dir}</span><span class="pill tf">${esc(x.tf)}</span><span class="small">${esc(SETUP_NAME[x.cand.setup])}${x.cand.trunc ? ' (skraćena peta)' : ''}</span><span class="small muted" style="flex-basis:100%">${esc(x.cand.status)}${r ? ' — ' + esc(r) : ''}</span></div>`;
-  }).join('') : '<div class="empty">—</div>') + (C.length ? `<p class="small muted" style="margin:8px 0 0">C (bez jasne strukture, izbačeni): ${C.map(c => esc(c.sym + '.P')).join(', ')}</p>` : '');
-
-  // tabela aktivnosti
-  $('#actInfo').textContent = `prag ${thr}% · likvidnih ${total} · odbijeno: likvidnost ${rej.likvidnost}, novi ${rej.starost}, delisting ${rej.delisting}, ručno ${rej.iskljuceno}`;
-  const th = ['Coin','Izvor','24h','Cena 4h','OI 4h','Pravi OI','Funding 8h','OI $','Promet','EW'];
-  $('#actTable thead').innerHTML = '<tr>' + th.map((t,i) => `<th class="${i >= 2 && i <= 8 ? 'r' : ''}">${t}</th>`).join('') + '</tr>';
-  const rows = [...sel].sort((a,b) => ({A:0,B:1,C:2}[a.cls] - {A:0,B:1,C:2}[b.cls]) || Math.abs(b.trueOI || 0) - Math.abs(a.trueOI || 0));
-  $('#actTable tbody').innerHTML = rows.map(c => `<tr>
-    <td><a href="${tvLink(c.sym)}" target="_blank" rel="noopener">${esc(c.sym + '.P')}</a></td>
-    <td>${(c.src || []).map(s => `<span class="tag">${esc(s)}</span>`).join('')}</td>
-    <td class="r ${cls(c.ch24)}">${fpc(c.ch24)}</td>
-    <td class="r ${cls(c.px4)}">${fpc(c.px4)}</td>
-    <td class="r ${cls(c.oi4)}">${fpc(c.oi4)}</td>
-    <td class="r ${cls(c.trueOI)}">${fpc(c.trueOI)}</td>
-    <td class="r ${cls(c.f8)}">${c.f8 != null ? c.f8.toFixed(4) + '%' : '–'}</td>
-    <td class="r">${fm(c.oiv)}</td>
-    <td class="r">${fm(c.turn)}</td>
-    <td><span class="pill ${c.cls === 'A' ? 'a' : c.cls === 'B' ? 'b' : 'x'}">${c.cls}${c.cls !== 'C' && c.clsTf ? ' · ' + esc(c.clsTf) : ''}</span></td>
-  </tr>`).join('');
-}
-
-/* ====================== izbor timeframe-a ====================== */
-let TF_SEL = (LS.get('tfs', ['15m','1h']) || []).filter(t => TF_CHOICES.includes(t));
-if(!TF_SEL.length) TF_SEL = ['15m','1h'];
-function renderTfChips(){
-  const box = $('#tfChips'); box.innerHTML = '';
-  for(const tf of TF_CHOICES){
+function renderFilters(){
+  const box = $('#filters'); box.innerHTML = '';
+  for(const [k, label] of FILTERS){
     const b = document.createElement('button');
-    b.className = 'chip'; b.id = 'tf-' + tf; b.textContent = tf;
-    b.setAttribute('aria-pressed', TF_SEL.includes(tf) ? 'true' : 'false');
-    b.onclick = () => {
-      if(TF_SEL.includes(tf)){ if(TF_SEL.length === 1) return; TF_SEL = TF_SEL.filter(t => t !== tf); }
-      else { if(TF_SEL.length >= 3) return; TF_SEL.push(tf); }
-      TF_SEL.sort((a,b) => TF_CHOICES.indexOf(a) - TF_CHOICES.indexOf(b));
-      LS.set('tfs', TF_SEL); renderTfChips();
-      if(lastResult && !scanning) scan();
-    };
+    b.className = 'chip'; b.id = 'f-' + k; b.setAttribute('aria-pressed', filter === k ? 'true' : 'false');
+    b.innerHTML = esc(label) + (R ? `<span class="n">${R.sets[k].length}</span>` : '');
+    b.onclick = () => { filter = k; LS.set('filter', k); render(); };
     box.appendChild(b);
   }
-  $('#tfInfo').textContent = 'Struktura → podtalasi: ' + TF_SEL.map(t => `${t} → ${TF[t].low}`).join(' · ') + '. Promena pokreće novo skeniranje.';
+}
+function card(c){
+  const [ic, it] = interp(c), ext = Math.abs(c.f8) >= S.fundingExt;
+  const m = (l, v, cl='', key=false) => `<div class="${key ? 'key' : ''}"><span>${l}</span><b class="${cl}">${v}</b></div>`;
+  return `<div class="coin">
+    <div class="top">
+      <a class="sym" href="${tvLink(c.sym)}" target="_blank" rel="noopener">${esc(c.sym)}.P</a>
+      <span class="pill ${ic}">${esc(it)}</span>
+      ${ext ? '<span class="pill warn">ekstreman funding</span>' : ''}
+    </div>
+    <div class="row" style="margin-top:6px">${c.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
+    <div class="m">
+      ${m('Pravi OI 4h', fpc(c.trueOI), cls(c.trueOI), true)}
+      ${m('OI 4h', fpc(c.oi4), cls(c.oi4))}
+      ${m('Cena 4h', fpc(c.px4), cls(c.px4))}
+      ${m('Cena 24h', fpc(c.ch24), cls(c.ch24))}
+      ${m('Funding 8h', c.f8 != null ? c.f8.toFixed(4) + '%' : '–', cls(c.f8))}
+      ${m('Cena', esc(fp(c.price)))}
+      ${m('OI $', fm(c.oiv))}
+      ${m('Promet 24h', fm(c.turn))}
+    </div>
+    <div class="links"><a href="${tvLink(c.sym)}" target="_blank" rel="noopener">TradingView</a><a href="${bbLink(c.sym)}" target="_blank" rel="noopener">Bybit</a></div>
+  </div>`;
+}
+function render(){
+  renderFilters();
+  $('#copyBox').hidden = true; $('#copyInfo').textContent = '';
+  if(!R) return;
+  const rejTotal = Object.values(R.rej).reduce((a,b) => a+b, 0);
+  $('#stats').innerHTML = [
+    [R.coins.length, 'likvidnih USDT.P'], [R.thr + '%', 'prag OI 4h'], [R.sets.lista.length, 'na listi za danas'], [rejTotal, 'odbijeno']
+  ].map(([v, l]) => `<div><b>${esc(v)}</b><span>${esc(l)}</span></div>`).join('');
+  $('#rejInfo').textContent = `Odbijeno: likvidnost ${R.rej.likvidnost}, mlađi od ${S.minAgeDays} dana ${R.rej.novi}, delisting ${R.rej.delisting}, ručno ${R.rej.iskljuceno}. OI i promet su samo sa Bybita.`;
+  const list = current();
+  $('#list').innerHTML = list.length ? list.map(card).join('') : '<div class="empty">Nema coinova u ovoj grupi.</div>';
 }
 
-/* ====================== start ====================== */
+/* ---------- kopiranje za TradingView watchlist ---------- */
+$('#copyTv').onclick = () => {
+  const list = current();
+  if(!list.length){ $('#copyInfo').textContent = 'Lista je prazna.'; return; }
+  const text = list.map(c => tvSym(c.sym)).join(',');
+  const box = $('#copyBox'); box.value = text;
+  const fallback = () => { box.hidden = false; box.focus(); box.select(); $('#copyInfo').textContent = 'Označi i kopiraj tekst ispod.'; };
+  try{
+    navigator.clipboard.writeText(text).then(() => { $('#copyInfo').textContent = `Kopirano ${list.length} simbola. Nalepi u TradingView watchlist (polje za dodavanje simbola).`; }, fallback);
+  }catch(e){ fallback(); }
+};
+
+/* ---------- start ---------- */
 let autoTimer = null;
-const autoSel = $('#autoScan');
-autoSel.value = String(LS.get('auto', 0));
-function setAuto(){
-  clearInterval(autoTimer);
-  const m = +autoSel.value; LS.set('auto', m);
-  if(m > 0) autoTimer = setInterval(scan, m*60e3);
-}
+const autoSel = $('#autoScan'); autoSel.value = String(LS.get('auto', 0));
+function setAuto(){ clearInterval(autoTimer); const m = +autoSel.value; LS.set('auto', m); if(m > 0) autoTimer = setInterval(scan, m*60e3); }
 autoSel.addEventListener('change', setAuto);
 $('#scanBtn').onclick = scan;
-$('#resetSettings').onclick = () => { S = Object.assign({}, DEF); LS.set('settings', S); renderSettings(); refreshBanners(); if(lastResult) renderAll(); };
-setInterval(() => { if(DAY.date !== todayKey()){ DAY = dayState(); } refreshBanners(); renderDay(); }, 60e3);
-applyTheme(); renderTfChips(); renderSettings(); renderDay(); refreshBanners(); setAuto(); detectApi();
+applyTheme(); renderSettings(); renderFilters(); setAuto(); detectApi();
 </script>
 </body>
 </html>

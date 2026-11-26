@@ -1,35 +1,24 @@
-# EW Skener
+# USDT.P Skener
 
-Skener za rutinu pre sesije po strategiji „EW strategija: 5 talasa“. Radi u browseru, sa javnim Bybit podacima, bez naloga i API ključeva.
+Skener za korake 3 i 4 rutine pre sesije: likvidnost i aktivnost na Bybit USDT perpetual ugovorima. Radi u browseru, sa javnim Bybit podacima, bez naloga i API ključeva. Elliott talase ne broji: listu proveravaš sam na TradingView-u.
+
+## Šta radi
+- **Likvidnost (korak 3):** samo Bybit USDT.P, OI ≥ 10M $, promet 24h ≥ 50M $, bez coinova mlađih od 14 dana i bez delistinga. Coinove iz polja „Isključi“ preskače.
+- **Aktivnost (korak 4):**
+  - OI 4h i cena 4h, pravi OI = promena OI − promena cene.
+  - Prag OI je 5%; prelazi na 8% ako ih ima previše, a na 3% ako ih ima manje od 5.
+  - Najveći rast i pad za 24h.
+- **Lista za danas:** do 15 coinova po |pravom OI|, uz najveći rast i pad i coinove iz „Uvek na listi“.
+- **Tumačenje za 4h:** novi longovi, novi shortovi, zatvaranje shortova ili zatvaranje longova. Funding je preračunat na 8h, a ekstreman funding je označen.
+- **Kopiraj za TradingView:** lista u obliku `BYBIT:SOLUSDT.P,BYBIT:ETHUSDT.P,...`.
 
 ## Na telefonu
-Otvori `https://<tvoj-nalog>.github.io/ew-skener/` i klikni **Skeniraj**.
+Otvori `https://sarunac25-wq.github.io/ew-skener/` i klikni **Skeniraj**.
 
-Ako dobiješ grešku „Browser nije dobio odgovor od Bybita“, Bybit ne dozvoljava pozive iz browsera. Tada:
-1. Otvori dash.cloudflare.com (besplatan nalog) → **Workers & Pages** → **Create** → **Create Worker** → **Deploy**.
-2. **Edit code**, obriši sve, nalepi sadržaj fajla `cloudflare-worker.js` i klikni **Deploy**.
-3. Kopiraj adresu Workera (npr. `https://ew-proxy.tvojnalog.workers.dev`).
-4. U skeneru: **Podešavanja → API adresa**, nalepi adresu i ponovo klikni **Skeniraj**.
+Ako dobiješ grešku „Browser nije dobio odgovor od Bybita“:
+1. Na dash.cloudflare.com: **Workers & Pages → Create → Create Worker → Deploy**.
+2. **Edit code**, nalepi `cloudflare-worker.js`, pa **Deploy**.
+3. Adresu Workera upiši u skeneru: **Podešavanja → API adresa**.
 
 ## Na računaru
-Dvaput klikni na `ew-skener.html`. Ako browser blokira pozive, pokreni `python3 serve.py` (na Windowsu `py serve.py`).
-
-## Brojanje talasa
-- **Timeframe:** biraš do 3 TF-a (5m, 15m, 30m, 1h, 2h, 4h). Svaka kartica ima oznaku TF-a.
-- **Niži stepen:** svaki talas se proverava na nižem TF-u (5m → 1m, 15m → 5m, 30m → 5m, 1h → 15m, 2h → 30m, 4h → 1h):
-  - impulsni talasi traže 5 podtalasa (impuls ili dijagonala),
-  - korekcije traže 3 (zigzag, flat ili prošireni flat).
-  - Podtalasi se crtaju isprekidano (i–v, a–b–c).
-- **Ekstenzija:** označava produžen talas 1, 3 ili 5 i ono što iz toga sledi:
-  - produžen 3 → talas 5 ≈ talas 1,
-  - produžen 5 → cilj je dno podtalasa ii unutar pete,
-  - talas 3 kraći od talasa 1 → cilj talasa 5 je ograničen.
-- **Truncation:** prepoznaje skraćenu petu (posle jakog talasa 3, samo uz 5 podtalasa) i odbacuje Setup 3 kad je rizik skraćenja velik.
-- **Više countova:** na svakom TF-u se prikazuju glavni i alternativni count. Ako važi više od 2 counta, sve ide u B (pravilo iz strategije).
-
-## Šta skener radi
-- Likvidnost (OI ≥ 10M $, promet ≥ 50M $), OI 4h i pravi OI, BTC kontekst.
-- Predlozi countova za Setup 1, 2 i 3 na 1h i 15m, sa ocenom (5/5 → 1R, 4/5 → 0.5R), ciljevima, R:R i veličinom pozicije.
-- Dnevni limiti (+2R, 2 gubitka, 3 trejda, −4R nedeljno).
-
-Count je heuristika. Potvrdu counta, alternativu i 5–3 na manjem TF-u radiš ručno na TradingView-u.
+Dvaput klikni na `ew-skener.html`. Ako browser blokira pozive, pokreni `python3 serve.py` (Windows: `py serve.py`).
