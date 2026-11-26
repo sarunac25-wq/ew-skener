@@ -100,6 +100,11 @@ a{color:var(--accent)}
 .svg-txt{fill:var(--muted);font-size:10px;font-family:system-ui,sans-serif}
 .svg-lbl{fill:var(--text);font-size:11px;font-weight:700;font-family:system-ui,sans-serif}
 .svg-path{stroke:var(--accent);fill:none;stroke-width:1.6}
+.svg-sub{stroke:var(--warn);fill:none;stroke-width:1;stroke-dasharray:3 2}
+.svg-sublbl{fill:var(--warn);font-size:9px;font-weight:600;font-family:system-ui,sans-serif}
+.pill.tf{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.chip{border-radius:99px;padding:6px 14px;font-weight:600}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 .svg-zone{fill:var(--accent);opacity:.13}
 .svg-stop{stroke:var(--short);stroke-width:1.2}
 .svg-inv{stroke:var(--short);stroke-width:1;stroke-dasharray:4 3}
@@ -166,6 +171,12 @@ a{color:var(--accent)}
   </div>
 
   <div class="col">
+    <section class="card">
+      <h2>Timeframe <span class="step">do 3</span></h2>
+      <div class="row" id="tfChips" role="group" aria-label="Timeframe strukture"></div>
+      <p class="small muted" id="tfInfo" style="margin:8px 0 0"></p>
+    </section>
+
     <section class="card">
       <h2>A lista <span class="step">korak 5–6</span> <span class="muted small" id="aCount"></span></h2>
       <p class="small muted" style="margin:0">Predlozi countova. Svaki proveri na TradingView-u: glavni count, alternativa i 5–3 na manjem TF-u. Ocena je preliminarna.</p>
@@ -477,7 +488,8 @@ function mkCand(O, o){
   const dir = (o.up === (s > 0)) ? 'LONG' : 'SHORT';
   const c = {
     setup: o.setup, dir, phase: o.phase, status: o.status, checks: o.checks || [], blocks: o.blocks || [],
-    notes: o.notes || [], alt: o.alt || '', pts: o.pts.map((p, idx) => ({n: (o.labels || '012345')[idx], i: p.i, p: real(p.p)})),
+    notes: o.notes || [], alt: o.alt || '', pts: o.pts.map((p, idx) => ({n: (o.labels || '012345')[idx], i: p.i, t: O.c[p.i].t, p: real(p.p)})),
+    sgn: s, trunc: !!o.trunc, t3x: o.t3x != null ? real(o.t3x) : null, subs: [],
     entry: real(o.entry), stop: real(o.stop), inval: real(o.inval), t1: real(o.t1), t2: real(o.t2), t2alt: o.t2alt != null ? real(o.t2alt) : null,
     zone: o.zone ? o.zone.map(real) : null, startI: o.pts[0].i
   };
@@ -524,8 +536,10 @@ function evalS1(O, pts, isLast){
   const L = O.last, close = O.cl[L], buf = 0.3*(O.atr[L] || 0);
   const [p0,p1,p2,p3,p4,p5] = pts;
   const len1 = p1.p-p0.p, len3 = p3.p-p2.p, len5 = p5.p-p4.p;
-  if(!(p2.p > p0.p && p3.p > p1.p && p4.p > p1.p && p5.p > p3.p)) return null;
-  if(len3 < len1 && len3 < len5) return null;
+  if(!(p2.p > p0.p && p3.p > p1.p && p4.p > p1.p)) return null;
+  const trunc = !(p5.p > p3.p);                                            // skraćena peta
+  if(trunc && (isLast || !(len3 >= 1.618*len1 && p5.p >= p3.p - 0.236*len3 && p5.p > p4.p))) return null;
+  if(!trunc && len3 < len1 && len3 < len5) return null;
   const e3 = maxIn(O.ewo, p2.i, p3.i), e5 = maxIn(O.ewo, p4.i, p5.i);
   if(e3 == null || e5 == null || !(e3 > e5)) return null;                 // bez divergencije nema trejda
   const ratio5 = len5/len1;
@@ -538,15 +552,22 @@ function evalS1(O, pts, isLast){
   const ciDiv = ci3 != null && ci5 != null && ci5 < ci3, rsiDiv = r5 < r3;
   const blocks = []; if(vol5 >= vol3) blocks.push('Volumen u talasu 5 je ≥ talasa 3: peta se verovatno produžava.');
   const checks = [
-    {k:'uslov', ok:true, t:'5 talasa bez prekršenog pravila (2 ne ispod 0, 3 nije najkraći, 4 ne ulazi u 1)'},
+    {k:'uslov', ok:true, t: trunc ? '5 talasa sa skraćenom petom (2 ne ispod 0, 4 ne ulazi u 1, talas 3 jak)' : '5 talasa bez prekršenog pravila (2 ne ispod 0, 3 nije najkraći, 4 ne ulazi u 1)'},
     {k:'uslov', ok:true, t:`EWO divergencija: vrh u 3 (${e3.toFixed(2)}) > vrh u 5 (${e5.toFixed(2)})`},
-    {k:'uslov', ok:fib, t:`Talas 5 = ${ratio5.toFixed(2)} × talas 1${atCh ? ', na gornjoj liniji kanala' : ''} (zona 0.618–1.0)`},
-    {k:'uslov', ok:null, t:'Talas 5 ima 5 podtalasa ili je završna dijagonala; znam veći stepen'},
+    {k:'uslov', ok: trunc ? null : fib, t:`Talas 5 = ${ratio5.toFixed(2)} × talas 1${atCh ? ', na gornjoj liniji kanala' : ''} (zona 0.618–1.0${trunc ? '; ne važi za skraćenu petu' : ''})`},
+    {k:'uslov', id:'sub', w:[4,5,5], ok:null, t:'Talas 5 ima 5 podtalasa ili je završna dijagonala'},
+    {k:'uslov', ok:null, t:'Znam šta je ovaj impuls u većem stepenu (od toga zavisi cilj 2)'},
     {k:'bod', ok:fib, t:'Fibonacci zona'},
     {k:'bod', ok:true, t:'EWO se ponaša kako setup traži'},
     {k:'bod', ok:ciDiv, t:`Composite Index niži vrh u 5${ciDiv && !rsiDiv ? ' (RSI ga nema – najjače)' : ''}`},
     {k:'bod', ok:r3 >= 70 && rsiDiv, t:`RSI: talas 3 u gornjoj zoni (${r3.toFixed(0)}), talas 5 niže (${r5.toFixed(0)})`},
   ];
+  const big = Math.max(len1, len3, len5), ext = len3 === big && len3 >= 1.618*Math.max(len1, len5) ? 3
+    : len5 === big && len5 >= 1.618*Math.max(len1, len3) ? 5 : len1 === big && len1 >= 1.618*Math.max(len3, len5) ? 1 : null;
+  if(ext === 3) checks.push({k:'info', ok:true, t:`Produžen je talas 3 (${(len3/len1).toFixed(2)} × talas 1): talas 5 je obično ≈ talas 1.`});
+  if(ext === 5) checks.push({k:'info', ok:true, t:'Produžen je talas 5: posle njega cena se često brzo vraća do dna podtalasa ii unutar pete (cilj 2 iz tabele).'});
+  if(ext === 1) checks.push({k:'info', ok:true, t:'Produžen je talas 1: talasi 3 i 5 su obično kraći i slični po dužini.'});
+  if(trunc) checks.push({k:'info', ok:null, t:'Skraćena peta (truncation): vrh 5 nije prešao vrh 3. Važi samo ako talas 5 ima jasnih 5 podtalasa; najavljuje slabost trenda.'});
   const t1 = p4.p, t2 = p5.p - 0.618*(p5.p-p0.p);
   if(isLast){
     return {setup:1, up:false, phase:'B', pts, checks, blocks,
@@ -560,7 +581,7 @@ function evalS1(O, pts, isLast){
                : close <= z2 ? 'Cena je u zoni ulaza 50–61.8%. Čekam presek Composite Index-a nadole.'
                : 'Cena je iznad zone ulaza, blizu vrha talasa 5.';
   checks.push({k:'info', ok:broke, t: broke ? 'Linija 2–4 probijena zatvaranjem sveće: agresivni ulaz uz pola rizika' : 'Linija 2–4 još nije probijena'});
-  return {setup:1, up:false, phase:'A', pts, checks, blocks, status,
+  return {setup:1, up:false, phase:'A', pts, checks, blocks, status: (trunc ? 'Skraćena peta. ' : '') + status, trunc, ext,
     entry:(z1+z2)/2, zone:[z1,z2], stop:p5.p+buf, inval:p5.p, t1, t2,
     alt:'Talas 5 se produžava (nov vrh iznad 5 sa EWO iznad vrha talasa 3).',
     notes:['Cilj 2 je ovde 61.8% impulsa. Izaberi ga po tabeli većeg stepena (talas 1 → 50–61.8%, talas 3 → samo cilj 1).']};
@@ -583,7 +604,8 @@ function evalS2(O, pts, caseA, minW1){
   const rsi2 = minIn(O.rsi, p1.i, w2end);
   const fib = inR(r2, 0.48, 0.80);
   const checks = [
-    {k:'uslov', ok: null, t:'Talas 1 ima 5 talasa (impuls ili vodeća dijagonala), a talas 2 ima 3: proveri ručno'},
+    {k:'uslov', id:'sub', w:[0,1,5], ok:null, t:'Talas 1 ima 5 podtalasa (impuls ili vodeća dijagonala)'},
+    {k:'uslov', id:'sub', w:[1,2,3], ok:null, t:'Talas 2 ima 3 podtalasa (zigzag ili flat)'},
     {k:'uslov', ok: fib, t:`Talas 2 je vratio ${pct(r2)} talasa 1 (zona 50–78.6%) i nije ispod početka`},
     {k:'uslov', ok: true, t:`RSI u talasu 1 je prešao 60 (max ${rsi1.toFixed(0)})`},
     {k:'uslov', ok: true, t:`EWO se u talasu 2 vratio do nule (${ewo2.toFixed(2)})`},
@@ -595,7 +617,8 @@ function evalS2(O, pts, caseA, minW1){
   const t1 = p2.p + len1, t2 = p2.p + 1.618*len1;
   const notes = ['Zamka: ako cena pređe vrh talasa 1, a EWO ne pređe svoj vrh iz talasa 1, može biti talas B proširenog flata. Uzmi cilj 1 i stop pomeri na ulaz.'];
   const alt = 'Ovo je talas C korekcije (C = A). Cilj 1 važi u oba scenarija.';
-  const base = {setup:2, up:true, pts, labels:'012', checks, notes, alt, inval:p0.p};
+  checks.push({k:'info', ok:true, t:'Talas 3 je najčešće produženi talas: ostatak drži dok EWO pravi nove vrhove (cilj 2.618 × talas 1).'});
+  const base = {setup:2, up:true, pts, labels:'012', checks, notes, alt, inval:p0.p, t3x: p2.p + 2.618*len1};
   if(caseA){
     if(r2 < 0.236 || r2 > 0.80) return null;
     if(r2 < 0.45){
@@ -620,7 +643,7 @@ function evalS3(O, pts, caseA){
   if(e1 == null || e3 == null || e4 == null || e3 <= 0) return null;
   const proj = p4.p + len1;
   const ewoBig = e3 > e1, ewoZero = e4 <= 0.25*e3 && e4 >= -0.35*e3, projOk = proj > p3.p;
-  if(!ewoBig || !projOk) return null;
+  if(!ewoBig) return null;
   const fib = inR(r4, 0.22, 0.40);
   const ci2 = minIn(O.ci, p1.i, p2.i), ci4 = minIn(O.ci, p3.i, w4end);
   const hidden = p4.p > p2.p && ci2 != null && ci4 != null && ci4 < ci2;
@@ -630,13 +653,19 @@ function evalS3(O, pts, caseA){
     {k:'uslov', ok: inR(r4, 0.2, 0.45), t:`Talas 4 je plitak: ${pct(r4)} talasa 3 (zona 23.6–38.2%), ne ulazi u talas 1`},
     {k:'uslov', ok: r2 >= 0.5 && r4 <= 0.45 ? true : null, t:`Alternacija: talas 2 ${pct(r2)}, talas 4 ${pct(r4)} (proveri i oblik)`},
     {k:'uslov', ok: ewoZero, t:`EWO se u talasu 4 vratio do nule, ne duboko ispod (${e4.toFixed(2)}, granica −0.35 × vrh talasa 3)`},
-    {k:'uslov', ok: true, t:'Projekcija 1.0 × talas 1 od kraja 4 je iznad vrha talasa 3 (nema rizika skraćenja)'},
+    {k:'uslov', ok: projOk, t: projOk ? 'Projekcija 1.0 × talas 1 od kraja 4 je iznad vrha talasa 3 (nema rizika skraćenja)' : 'Projekcija 1.0 × talas 1 od kraja 4 je ispod vrha talasa 3: rizik skraćene pete (truncation), preskačem'},
+    {k:'uslov', id:'sub', w:[2,3,5], ok:null, t:'Talas 3 ima 5 podtalasa'},
+    {k:'uslov', id:'sub', w:[3,4,3], ok:null, soft:true, t:'Talas 4 ima 3 podtalasa (ili je trougao)'},
     {k:'bod', ok: fib, t:'Fibonacci zona'},
     {k:'bod', ok: ewoZero, t:'EWO se ponaša kako setup traži'},
     {k:'bod', ok: hidden, t:'Skrivena divergencija (dno 4 iznad dna 2, Composite Index niže)'},
     {k:'bod', ok: rsi4 != null && rsi4 > 40, t:`RSI u talasu 4 iznad 40 (min ${rsi4 != null ? rsi4.toFixed(0) : '–'})`},
   ];
-  const t1 = Math.min(p4.p + 0.618*len1, p3.p), t2 = proj, t2alt = p4.p + 0.618*(p3.p-p0.p);
+  const cap = len3 < len1 ? p4.p + len3 : Infinity;                       // 3 ne sme biti najkraći → 5 < 3
+  const t1 = Math.min(p4.p + 0.618*len1, p3.p), t2 = Math.min(proj, cap), t2alt = Math.min(p4.p + 0.618*(p3.p-p0.p), cap);
+  if(len3 >= 1.618*len1) checks.push({k:'info', ok:true, t:`Talas 3 je produžen (${(len3/len1).toFixed(2)} × talas 1): talas 5 je obično ≈ talas 1 (cilj 2).`});
+  if(len3 < len1) checks.push({k:'info', ok:true, t:'Talas 3 je kraći od talasa 1, pa talas 5 mora biti kraći od talasa 3: cilj 2 je ograničen na dužinu talasa 3.'});
+  if(len3 >= 2.618*len1) checks.push({k:'info', ok:null, t:'Vrlo jak talas 3: peta može biti skraćena (truncation). Na cilju 1 obavezno pomeri stop.'});
   const base = {setup:3, up:true, pts, labels:'01234', checks, inval:p1.p,
     alt:'Talas 4 se razvija u složeniju korekciju (trougao ili kombinacija). Tada čekaj kraj e ili proboj linije b–d.'};
   if(caseA){
@@ -678,15 +707,138 @@ function analyzeTF(c){
     const piv = zigzag(c, ind.atr, k), fine = zigzag(c, ind.atr, Math.max(0.75, k/2));
     for(const sgn of [1, -1]) for(const cand of detectAll(orient(c, ind, piv, fine, sgn))){ cand.k = k; all.push(cand); }
   }
-  // isti setup/smer → zadrži jedan: A pre B, pa više bodova, pa veća struktura
-  const best = {};
+  // isti setup/smer → zadrži do 3 različita counta; konačan izbor tek posle provere podtalasa (pickBest)
+  const groups = {};
   for(const c2 of all){
-    const key = c2.setup + c2.dir;
-    const size = Math.abs(c2.pts[c2.pts.length-1].i - c2.pts[0].i);
-    const sc = (c2.phase === 'A' ? 1000 : 0) + c2.checks.filter(x => x.k === 'bod' && x.ok).length*100 + Math.min(size, 99);
-    if(!best[key] || sc > best[key]._sc){ c2._sc = sc; best[key] = c2; }
+    const key = c2.setup + c2.dir + (c2.trunc ? 'T' : '');
+    c2._key = key; c2._sc = candScore(c2);
+    const sig = c2.pts.map(p => p.i).join(',');
+    const g = groups[key] || (groups[key] = []);
+    if(!g.some(x => x._sig === sig)){ c2._sig = sig; g.push(c2); }
   }
-  return {cands: Object.values(best), ind};
+  const cands = Object.values(groups).flatMap(g => g.sort((a,b) => b._sc - a._sc).slice(0, 3));
+  return {cands, ind};
+}
+function candScore(c2){
+  const size = Math.abs(c2.pts[c2.pts.length-1].i - c2.pts[0].i);
+  const failed = c2.checks.filter(x => x.k === 'uslov' && x.ok === false).length;
+  return (c2.phase === 'A' ? 1000 : 0) - failed*400 + c2.checks.filter(x => x.k === 'bod' && x.ok).length*100 + Math.min(size, 99);
+}
+function pickBest(r){
+  const best = {};
+  for(const c2 of r.cands){ c2._sc = candScore(c2); if(!best[c2._key] || c2._sc > best[c2._key]._sc) best[c2._key] = c2; }
+  r.cands = Object.values(best);
+  return r;
+}
+
+/* ====================== timeframe i niži stepen ====================== */
+const TF = {'1m':{iv:'1',min:1}, '5m':{iv:'5',min:5,low:'1m'}, '15m':{iv:'15',min:15,low:'5m'}, '30m':{iv:'30',min:30,low:'5m'},
+            '1h':{iv:'60',min:60,low:'15m'}, '2h':{iv:'120',min:120,low:'30m'}, '4h':{iv:'240',min:240,low:'1h'}};
+const TF_CHOICES = ['5m','15m','30m','1h','2h','4h'];
+
+function zzHL(h, l, at, k, s, e){
+  const piv = []; let dir = 0, hi = s, lo = s;
+  for(let i = s+1; i <= e; i++){
+    const th = k * (at[i] != null ? at[i] : (h[i] - l[i]));
+    if(dir === 0){
+      if(h[i] > h[hi]) hi = i;
+      if(l[i] < l[lo]) lo = i;
+      if(h[hi] - l[lo] >= th){ if(hi > lo){ piv.push({i:lo, p:l[lo], t:'L'}); dir = 1; } else { piv.push({i:hi, p:h[hi], t:'H'}); dir = -1; } }
+    } else if(dir === 1){
+      if(h[i] >= h[hi]) hi = i;
+      else if(h[hi] - l[i] >= th){ piv.push({i:hi, p:h[hi], t:'H'}); dir = -1; lo = i; }
+    } else {
+      if(l[i] <= l[lo]) lo = i;
+      else if(h[i] - l[lo] >= th){ piv.push({i:lo, p:l[lo], t:'L'}); dir = 1; hi = i; }
+    }
+  }
+  return piv;
+}
+
+/* Podtalasi pokreta NAGORE od s (dno) do e (vrh) u nizovima h/l.
+   want = 5 → impuls ili dijagonala, want = 3 → zigzag ili flat. */
+function subWaves(h, l, at, s, e, want){
+  if(e - s < (want === 5 ? 8 : 4)) return {kind:null, why:'premalo sveća na nižem TF-u'};
+  const S = {i:s, p:l[s]}, E = {i:e, p:h[e]}, total = E.p - S.p;
+  if(!(total > 0)) return {kind:null, why:'nema pokreta'};
+  const up = (a, b) => minIn(l, a.i, b.i) >= a.p - 1e-12 && maxIn(h, a.i, b.i) <= b.p + 1e-12;   // a dno, b vrh
+  const dn = (a, b) => maxIn(h, a.i, b.i) <= a.p + 1e-12 && minIn(l, a.i, b.i) >= b.p - 1e-12;   // a vrh, b dno
+  let diag = null, sawInterior = false;
+  for(const k of [3, 1.5, 0.75]){
+    const P = zzHL(h, l, at, k, s, e).filter(p => p.i > s && p.i < e);
+    if(P.length) sawInterior = true;
+    if(P.length > 48) continue;
+    const Hs = P.filter(p => p.t === 'H'), Ls = P.filter(p => p.t === 'L');
+    if(want === 5){
+      for(const H1 of Hs){ if(!up(S, H1)) continue; const len1 = H1.p - S.p; if(len1 < 0.1*total) continue;
+        for(const L2 of Ls){ if(L2.i <= H1.i || L2.p <= S.p || !dn(H1, L2) || (H1.p - L2.p) < 0.15*len1) continue;
+          for(const H3 of Hs){ if(H3.i <= L2.i || H3.p <= H1.p || !up(L2, H3)) continue; const len3 = H3.p - L2.p;
+            for(const L4 of Ls){ if(L4.i <= H3.i || !dn(H3, L4) || !up(L4, E) || E.p <= H3.p || (H3.p - L4.p) < 0.1*len3) continue;
+              const len5 = E.p - L4.p;
+              if(len3 < len1 && len3 < len5) continue;
+              if(Math.min(len3, len5) < 0.1*total) continue;
+              const pts = [S, H1, L2, H3, L4, E];
+              if(L4.p > H1.p) return {kind:'impuls', pts, labels:['','i','ii','iii','iv','v'], len:[len1, len3, len5]};
+              const conv = len1 > len3 && len3 > len5, expd = len1 < len3 && len3 < len5;
+              if(!diag && L4.p > L2.p && (conv || expd)) diag = {kind: conv ? 'dijagonala (sužava se)' : 'dijagonala (širi se)', pts, labels:['','i','ii','iii','iv','v'], len:[len1, len3, len5]};
+            }
+          }
+        }
+      }
+    } else {
+      for(const A of Hs){ if(!up(S, A)) continue; const lenA = A.p - S.p; if(lenA < 0.236*total) continue;
+        for(const B of Ls){ if(B.i <= A.i || !dn(A, B) || !up(B, E)) continue;
+          const rB = (A.p - B.p)/lenA; if(rB < 0.236 || B.p < S.p - 0.382*lenA) continue;
+          const pts = [S, A, B, E], labels = ['','a','b','c'];
+          if(rB >= 0.9) return {kind: B.p < S.p ? 'prošireni flat' : 'flat', pts, labels};
+          if(E.p > A.p) return {kind:'zigzag', pts, labels};
+        }
+      }
+    }
+  }
+  if(diag) return diag;
+  if(want === 3 && !sawInterior) return {kind:null, why:'korekcija u jednom potezu: možda je gotov samo talas a'};
+  return {kind:null, why: want === 5 ? 'nije nađeno 5 podtalasa po pravilima' : 'nije nađena jasna a–b–c struktura'};
+}
+
+/* Talas cand.pts[a] → cand.pts[b] na nižem TF-u (lc). */
+function subFor(cand, lc, lat, tfMin, a, b, want){
+  const pa = cand.pts[a], pb = cand.pts[b], sg = cand.sgn, ms = tfMin*60e3;
+  if(!lc.length || lc[0].t > pa.t) return {kind:null, nodata:true, why:'niži TF nema dovoljno istorije'};
+  let h = lc.map(x => sg > 0 ? x.h : -x.l), l = lc.map(x => sg > 0 ? x.l : -x.h);
+  const upMove = pb.p*sg > pa.p*sg;
+  if(!upMove){ const h2 = l.map(v => -v), l2 = h.map(v => -v); h = h2; l = l2; }
+  // prozor ±1 sveća višeg TF-a oko pivota, da se nađe pravi ekstrem na nižem TF-u
+  const win = (t, toEnd) => { let i0 = lc.findIndex(x => x.t >= t - ms); if(i0 < 0) i0 = lc.length-1; let i1 = i0; while(i1+1 < lc.length && (toEnd || lc[i1+1].t < t + 2*ms)) i1++; return [i0, i1]; };
+  const [a0, a1] = win(pa.t, false), [b0, b1] = win(pb.t, b === cand.pts.length-1);
+  let s = a0; for(let i = a0; i <= a1; i++) if(l[i] < l[s]) s = i;
+  let e = s+1; for(let i = s+1; i <= b1; i++) if(h[i] > h[e]) e = i;      // kraj = pravi ekstrem celog pokreta
+  for(let i = a0; i < e; i++) if(l[i] < l[s]) s = i;
+  if(e <= s) return {kind:null, why:'premalo sveća na nižem TF-u'};
+  const r = subWaves(h, l, lat, s, e, want);
+  if(r.pts){
+    const back = v => (upMove ? v : -v) * sg;
+    r.real = r.pts.map((p, k) => ({t: lc[p.i].t, p: back(p.p), n: r.labels[k]}));
+  }
+  return r;
+}
+
+function applySub(cand, lc, lat, tf){
+  const low = TF[tf].low, tfMin = TF[tf].min;
+  for(const ch of cand.checks){
+    if(ch.id !== 'sub') continue;
+    const [a, b, want] = ch.w, r = subFor(cand, lc, lat, tfMin, a, b, want);
+    if(r.kind){
+      ch.ok = true; ch.t += ` → ${low}: ${r.kind}`;
+      if(r.real) cand.subs.push(r.real);
+      if(cand.setup === 1 && want === 5 && /dijagonala/.test(r.kind)) cand.notes.push(`Završna dijagonala: cilj 2 je početak dijagonale (${fp(cand.pts[4].p)}), a preokret je obično brz.`);
+      if(cand.setup === 1 && want === 5 && r.kind === 'impuls' && r.real && cand.checks.some(x => /Produžen je talas 5/.test(x.t))) cand.t2alt = r.real[2].p;
+    } else {
+      ch.ok = r.nodata || ch.soft ? null : false;
+      ch.t += ` → ${low}: ${r.why}`;
+      if(cand.trunc && want === 5) ch.ok = false;
+    }
+  }
 }
 
 /* ====================== kontekst i ocena ====================== */
@@ -745,7 +897,7 @@ function btcContext(k4, k1){
   const strong = Math.abs(e1) >= p90 && (r1 >= 65 || r1 <= 35);
   return {
     price: k1[L1].c, e1, e4, r1, bias: e1 > 0 ? 'LONG' : 'SHORT', strong, strongDir: e1 > 0 ? 'LONG' : 'SHORT',
-    c4: analyzeTF(k4).cands, c1: analyzeTF(k1).cands
+    c4: pickBest(analyzeTF(k4)).cands, c1: pickBest(analyzeTF(k1)).cands
   };
 }
 
@@ -809,15 +961,24 @@ async function scan(){
     const [bk4, bk1] = await Promise.all([klines('BTCUSDT', '240', 300), klines('BTCUSDT', '60', 300)]);
     const ctx = {btc: btcContext(bk4, bk1)};
 
-    setStatus(`EW analiza za ${sel.length} coinova (1h i 15m)…`);
+    const tfs = TF_SEL.slice();
+    setStatus(`EW analiza za ${sel.length} coinova (${tfs.join(', ')}, podtalasi na nižem TF-u)…`);
     await pool(sel, 4, async c => {
-      const [k1, k15] = await Promise.all([klines(c.sym, '60', 300), klines(c.sym, '15', 300)]);
-      c.k = {'1h': k1, '15m': k15};
-      c.tf = {};
-      for(const tf of ['1h', '15m']){ const r = analyzeTF(c.k[tf]); c.tf[tf] = r; }
+      c.k = {}; c.tf = {}; const lowCache = {};
+      for(const tf of tfs){
+        c.k[tf] = await klines(c.sym, TF[tf].iv, 300);
+        const r = analyzeTF(c.k[tf]); c.tf[tf] = r;
+        if(r.cands.length){
+          const low = TF[tf].low;
+          const lc = lowCache[low] || (lowCache[low] = await klines(c.sym, TF[low].iv, 1000));
+          const lat = atr(lc, 14);
+          for(const cand of r.cands) applySub(cand, lc, lat, tf);
+        }
+        pickBest(r);
+      }
     }, (d, n) => setProg(0.6 + 0.4*d/n));
 
-    lastResult = {at: new Date(), sel, ctx, thr, total: coins.length, rej};
+    lastResult = {at: new Date(), sel, ctx, thr, total: coins.length, rej, tfs};
     renderAll();
     setStatus(`Skenirano u ${lastResult.at.toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'})}. Likvidnih ${coins.length}, izabrano ${sel.length}, prag OI ${thr}%.`);
   }catch(e){
@@ -842,7 +1003,7 @@ const SETUP_NAME = {1:'Setup 1 — Kraj impulsa', 2:'Setup 2 — Ulaz u talas 3'
 const tvLink = s => `https://www.tradingview.com/chart/?symbol=BYBIT:${encodeURIComponent(s)}.P`;
 const bbLink = s => `https://www.bybit.com/trade/usdt/${encodeURIComponent(s)}`;
 
-function chartSVG(c, ind, cand){
+function chartSVG(c, ind, cand, tfMin){
   const W = 640, PH = 210, EH = 54, GAP = 8, H = PH + GAP + EH, padL = 4, padR = 92, padT = 8;
   const from = Math.max(0, Math.min(cand.startI - 8, c.length - 60)), bars = c.slice(from), n = bars.length;
   const levels = [cand.stop, cand.inval, cand.t1, cand.t2, cand.entry, ...(cand.zone || [])].filter(v => v != null && isFinite(v));
@@ -871,6 +1032,14 @@ function chartSVG(c, ind, cand){
     s += `<rect class="${cl}" x="${x(i)-bw/2}" width="${bw}" y="${y(Math.max(b.o,b.c))}" height="${Math.max(0.8, Math.abs(y(b.o)-y(b.c)))}"/>`;
   });
   for(const a of lab) s += `<line class="${a.c2}" x1="${padL}" x2="${W-padR}" y1="${y(a.v)}" y2="${y(a.v)}"/><text class="svg-txt" x="${W-padR+4}" y="${a.y+3}" style="font-weight:600">${esc(a.t + ' ' + fp(a.v))}</text>`;
+  const fx = t => x((t - c[0].t)/(tfMin*60e3));                         // vreme nižeg TF-u → x
+  for(const sub of (cand.subs || [])){
+    const sp = sub.filter(p => p.t >= c[from].t);
+    s += `<polyline class="svg-sub" points="${sp.map(p => fx(p.t).toFixed(1) + ',' + y(p.p).toFixed(1)).join(' ')}"/>`;
+    sp.forEach((p, k) => { if(!p.n || k === sp.length-1) return;     /* kraj se poklapa sa glavnim pivotom */
+      const hiP = k + 1 < sp.length ? p.p > sp[k+1].p : p.p > sp[k-1].p;
+      s += `<text class="svg-sublbl" x="${fx(p.t).toFixed(1)}" y="${(hiP ? y(p.p)-4 : y(p.p)+11).toFixed(1)}" text-anchor="middle">${esc(p.n)}</text>`; });
+  }
   const pts = cand.pts.filter(p => p.i >= from);
   s += `<polyline class="svg-path" points="${pts.map(p => x(p.i).toFixed(1) + ',' + y(p.p).toFixed(1)).join(' ')}"/>`;
   pts.forEach((p, k) => {
@@ -900,11 +1069,13 @@ function candCard(coin, tf, cand){
     <div class="top">
       <span class="sym">${esc(coin.sym + '.P')}</span>
       <span class="pill ${cand.dir === 'LONG' ? 'long' : 'short'}">${cand.dir}</span>
-      <span>${esc(SETUP_NAME[cand.setup])} · ${esc(tf)}</span>
+      <span class="pill tf" title="Timeframe strukture; podtalasi na ${esc(TF[tf].low)}">${esc(tf)}</span>
+      <span>${esc(SETUP_NAME[cand.setup])}${cand.trunc ? ' (skraćena peta)' : ''}</span>
       <span class="score">${cand.points}/5 → ${esc(riskTxt)}</span>
     </div>
     <div class="small" style="margin-top:4px">${esc(cand.status)}</div>
-    ${chartSVG(c, ind, cand)}
+    ${chartSVG(c, ind, cand, TF[tf].min)}
+    <p class="small muted" style="margin:4px 0 0">Struktura na ${esc(tf)}, podtalasi (isprekidano, i–v i a–b–c) na ${esc(TF[tf].low)}.</p>
     <div class="kv">
       ${kv('Ulaz (procena)', esc(fp(cand.entry)))}
       ${cand.zone ? kv('Zona', esc(fp(Math.min(...cand.zone)) + ' – ' + fp(Math.max(...cand.zone)))) : ''}
@@ -913,6 +1084,7 @@ function candCard(coin, tf, cand){
       ${kv('Cilj 1', esc(fp(cand.t1)) + ` <span class="muted small">${fmtRR(cand.rr1)}</span>`, 'pos')}
       ${kv('Cilj 2', esc(fp(cand.t2)) + ` <span class="muted small">${fmtRR(cand.rr2)}</span>`, 'pos')}
       ${cand.t2alt != null ? kv('Cilj 2 (alt.)', esc(fp(cand.t2alt))) : ''}
+      ${cand.t3x != null ? kv('Ako se 3 produži', esc(fp(cand.t3x)) + ' <span class="muted small">2.618×</span>', 'pos') : ''}
       ${kv('Pozicija', cand.size ? esc(Math.round(cand.size).toLocaleString('sr-RS')) + ' USDT' : '–')}
       ${kv('Rizik / poluga', cand.size ? esc(Math.round(cand.riskUsd)) + ' USDT · ' + esc(cand.lev.toFixed(2)) + '×' : '–')}
       ${kv('Funding 8h', esc(coin.f8 != null ? coin.f8.toFixed(4) + '%' : '–'), cls(coin.f8))}
@@ -923,11 +1095,12 @@ function candCard(coin, tf, cand){
     </div>
     <h3>Obavezno, ručno</h3>
     <ul class="checks">
-      ${checkLi({ok:null, t:'Count bez prekršenog pravila i alternativni count, na TradingView-u'})}
+      ${checkLi({ok:null, t:'Glavni i alternativni count potvrđeni na TradingView-u'})}
       ${checkLi({ok:null, t:'Strukturna potvrda: 5 pa 3 na manjem TF-u ili probijena linija'})}
       ${info.map(checkLi).join('')}
     </ul>
-    ${cand.alt ? `<p class="small" style="margin:8px 0 0"><b>Alternativa:</b> ${esc(cand.alt)}</p>` : ''}
+    <p class="small" style="margin:8px 0 0"><b>Alternativni count na ${esc(tf)}:</b> ${cand.altCount ? esc(cand.altCount) : 'skener nije našao drugi važeći count'}</p>
+    ${cand.alt ? `<p class="small" style="margin:4px 0 0"><b>Šta bi poništilo glavni count:</b> ${esc(cand.alt)}</p>` : ''}
     ${cand.notes.map(t => `<p class="small muted" style="margin:6px 0 0">${esc(t)}</p>`).join('')}
     <div class="row small" style="margin-top:8px"><a href="${tvLink(coin.sym)}" target="_blank" rel="noopener">TradingView</a><a href="${bbLink(coin.sym)}" target="_blank" rel="noopener">Bybit</a></div>
   </div>`;
@@ -957,18 +1130,28 @@ function renderAll(){
   const A = [], B = [], C = [];
   for(const coin of sel){
     const cands = [];
-    for(const tf of ['15m', '1h']){
+    for(const tf of lastResult.tfs){
       const r = coin.tf && coin.tf[tf]; if(!r) continue;
-      for(const cand of r.cands){
-        const cc = finalize(JSON.parse(JSON.stringify(cand)), coin, ctx);
-        cands.push({tf, cand: cc});
+      const list = r.cands.map(cand => finalize(JSON.parse(JSON.stringify(cand)), coin, ctx));
+      // countovi koji ne krše nijedan uslov; jedan TF = jedan stepen
+      const valid = list.filter(c2 => !c2.failedCond.length).sort((a,b) => (b.phase === 'A') - (a.phase === 'A') || b.points - a.points);
+      const name = c2 => `${SETUP_NAME[c2.setup].split(' — ')[1]}${c2.trunc ? ' (skraćena peta)' : ''} ${c2.dir}`;
+      for(const c2 of list){
+        const others = valid.filter(o => o !== c2);
+        if(valid.length > 2 && valid.includes(c2)){
+          c2.mand.push(`Više od 2 moguća counta na ${tf} (${valid.map(name).join('; ')}): count nije jasan`);
+          c2.isA = false;
+        }
+        if(others.length) c2.altCount = others.slice(0, valid.length > 2 ? 3 : 1).map(o => `${name(o)}, ${o.phase === 'A' ? 'u zoni' : 'kasnije'}, ${o.points}/5`).join(' · ');
+        c2.nValid = valid.length;
+        cands.push({tf, cand: c2});
       }
     }
     coin.cls = 'C';
     const as = cands.filter(x => x.cand.isA);
-    if(as.length){ coin.cls = 'A'; as.sort((a,b) => b.cand.points - a.cand.points); A.push({coin, ...as[0], others: as.slice(1)}); }
+    if(as.length){ coin.cls = 'A'; as.sort((a,b) => b.cand.points - a.cand.points); A.push({coin, ...as[0], others: as.slice(1)}); coin.clsTf = as[0].tf; }
     const rest = cands.filter(x => !x.cand.isA);
-    if(rest.length){ if(coin.cls === 'C') coin.cls = 'B'; rest.forEach(x => B.push({coin, ...x})); }
+    if(rest.length){ if(coin.cls === 'C'){ coin.cls = 'B'; coin.clsTf = rest[0].tf; } rest.forEach(x => B.push({coin, ...x})); }
     if(coin.cls === 'C') C.push(coin);
   }
   A.sort((a,b) => b.cand.points - a.cand.points);
@@ -987,7 +1170,7 @@ function renderAll(){
   $('#bList').innerHTML = (B.length ? B.map(x => {
     const r = reason(x.cand);
     const pill = x.cand.phase === 'A' ? '<span class="pill x">odbačen</span>' : '<span class="pill b">B</span>';
-    return `<div class="item">${pill}<b>${esc(x.coin.sym + '.P')}</b><span class="pill ${x.cand.dir === 'LONG' ? 'long' : 'short'}">${x.cand.dir}</span><span class="small">${esc(SETUP_NAME[x.cand.setup])} · ${esc(x.tf)}</span><span class="small muted" style="flex-basis:100%">${esc(x.cand.status)}${r ? ' — ' + esc(r) : ''}</span></div>`;
+    return `<div class="item">${pill}<b>${esc(x.coin.sym + '.P')}</b><span class="pill ${x.cand.dir === 'LONG' ? 'long' : 'short'}">${x.cand.dir}</span><span class="pill tf">${esc(x.tf)}</span><span class="small">${esc(SETUP_NAME[x.cand.setup])}${x.cand.trunc ? ' (skraćena peta)' : ''}</span><span class="small muted" style="flex-basis:100%">${esc(x.cand.status)}${r ? ' — ' + esc(r) : ''}</span></div>`;
   }).join('') : '<div class="empty">—</div>') + (C.length ? `<p class="small muted" style="margin:8px 0 0">C (bez jasne strukture, izbačeni): ${C.map(c => esc(c.sym + '.P')).join(', ')}</p>` : '');
 
   // tabela aktivnosti
@@ -1005,8 +1188,29 @@ function renderAll(){
     <td class="r ${cls(c.f8)}">${c.f8 != null ? c.f8.toFixed(4) + '%' : '–'}</td>
     <td class="r">${fm(c.oiv)}</td>
     <td class="r">${fm(c.turn)}</td>
-    <td><span class="pill ${c.cls === 'A' ? 'a' : c.cls === 'B' ? 'b' : 'x'}">${c.cls}</span></td>
+    <td><span class="pill ${c.cls === 'A' ? 'a' : c.cls === 'B' ? 'b' : 'x'}">${c.cls}${c.cls !== 'C' && c.clsTf ? ' · ' + esc(c.clsTf) : ''}</span></td>
   </tr>`).join('');
+}
+
+/* ====================== izbor timeframe-a ====================== */
+let TF_SEL = (LS.get('tfs', ['15m','1h']) || []).filter(t => TF_CHOICES.includes(t));
+if(!TF_SEL.length) TF_SEL = ['15m','1h'];
+function renderTfChips(){
+  const box = $('#tfChips'); box.innerHTML = '';
+  for(const tf of TF_CHOICES){
+    const b = document.createElement('button');
+    b.className = 'chip'; b.id = 'tf-' + tf; b.textContent = tf;
+    b.setAttribute('aria-pressed', TF_SEL.includes(tf) ? 'true' : 'false');
+    b.onclick = () => {
+      if(TF_SEL.includes(tf)){ if(TF_SEL.length === 1) return; TF_SEL = TF_SEL.filter(t => t !== tf); }
+      else { if(TF_SEL.length >= 3) return; TF_SEL.push(tf); }
+      TF_SEL.sort((a,b) => TF_CHOICES.indexOf(a) - TF_CHOICES.indexOf(b));
+      LS.set('tfs', TF_SEL); renderTfChips();
+      if(lastResult && !scanning) scan();
+    };
+    box.appendChild(b);
+  }
+  $('#tfInfo').textContent = 'Struktura → podtalasi: ' + TF_SEL.map(t => `${t} → ${TF[t].low}`).join(' · ') + '. Promena pokreće novo skeniranje.';
 }
 
 /* ====================== start ====================== */
@@ -1022,7 +1226,7 @@ autoSel.addEventListener('change', setAuto);
 $('#scanBtn').onclick = scan;
 $('#resetSettings').onclick = () => { S = Object.assign({}, DEF); LS.set('settings', S); renderSettings(); refreshBanners(); if(lastResult) renderAll(); };
 setInterval(() => { if(DAY.date !== todayKey()){ DAY = dayState(); } refreshBanners(); renderDay(); }, 60e3);
-applyTheme(); renderSettings(); renderDay(); refreshBanners(); setAuto(); detectApi();
+applyTheme(); renderTfChips(); renderSettings(); renderDay(); refreshBanners(); setAuto(); detectApi();
 </script>
 </body>
 </html>
