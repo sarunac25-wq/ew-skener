@@ -87,7 +87,14 @@ details summary{cursor:pointer;font-weight:650}
 .fresh{background:var(--warnbg);color:var(--warn);border-radius:10px;padding:10px 12px;font-size:14px}
 .fresh:empty{display:none}
 .ewo{margin-top:10px;border-top:1px solid var(--border);padding-top:8px}
-.tfbs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:6px}
+.tfbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:6px;margin-top:6px}
+.ftf{margin-top:6px;line-height:1.9}
+.ftf .pill{margin-right:4px}
+.ftf a,.dtrow a{font-weight:600}
+.dtf{display:grid;gap:6px}
+.dtrow{display:grid;grid-template-columns:44px 1fr;gap:8px;align-items:baseline;font-size:14px;padding:6px 0;border-top:1px solid var(--border)}
+.dtrow:first-child{border-top:0}
+.dtrow span{min-width:0;overflow-wrap:anywhere}
 .tfb{padding:5px 6px;font-size:12px;font-weight:600;text-align:left;min-width:0}
 .tfb b{display:block;font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .tfb[aria-pressed="true"]{border-color:var(--accent);outline:1px solid var(--accent)}
@@ -129,6 +136,14 @@ textarea.copy{width:100%;min-height:70px;margin-top:8px;font:12px ui-monospace,M
       <div><b>–</b><span>odbijeno</span></div>
     </div>
     <p class="small muted" id="rejInfo" style="margin:8px 0 0">Likvidnost: OI ≥ 10M $ i promet 24h ≥ 50M $, samo Bybit. Bez coinova mlađih od 2 nedelje i bez delistinga.</p>
+  </section>
+
+  <section class="card">
+    <h2>Divergencije po timeframe-u</h2>
+    <p class="small muted" style="margin:6px 0 0">Izaberi do 6 TF-ova. Za svaki TF upozorenje je posebno.</p>
+    <div class="chips" id="divTfs" role="group" aria-label="Timeframe-ovi za divergencije"></div>
+    <p class="small muted" id="tfNote" style="margin:0 0 10px"></p>
+    <div id="divTf" class="dtf"><div class="muted small">Još nije skenirano.</div></div>
   </section>
 
   <section class="card">
@@ -286,7 +301,26 @@ async function instruments(){
 function symList(str){ return (str || '').split(/[,;\s]+/).map(s => s.trim().toUpperCase().replace(/\.P$/, '')).filter(Boolean).map(s => s.endsWith('USDT') ? s : s + 'USDT'); }
 
 /* ---------- EWO_LB (LazyBear): EMA(close, 5) − EMA(close, 35) ---------- */
-const DIV_TFS = ['4h', '1h', '15m', '5m'], TFIV = {'4h':'240', '1h':'60', '15m':'15', '5m':'5'};
+const TFIV = {'1D':'D', '12h':'720', '6h':'360', '4h':'240', '2h':'120', '1h':'60', '30m':'30', '15m':'15', '5m':'5', '3m':'3', '1m':'1'};
+const TF_ALL = Object.keys(TFIV), TF_MAX = 6;
+let DIV_TFS = (LS.get('divTfs', ['4h', '1h', '15m', '5m']) || []).filter(t => TFIV[t]);
+if(!DIV_TFS.length) DIV_TFS = ['4h', '1h', '15m', '5m'];
+const sortTfs = a => a.sort((x, y) => TF_ALL.indexOf(x) - TF_ALL.indexOf(y));
+function renderTfChips(){
+  const box = $('#divTfs'); box.innerHTML = '';
+  for(const tf of TF_ALL){
+    const b = document.createElement('button');
+    b.className = 'chip'; b.id = 'dtf-' + tf; b.textContent = tf;
+    b.setAttribute('aria-pressed', DIV_TFS.includes(tf) ? 'true' : 'false');
+    b.onclick = () => {
+      if(DIV_TFS.includes(tf)){ if(DIV_TFS.length === 1) return; DIV_TFS = DIV_TFS.filter(t => t !== tf); }
+      else { if(DIV_TFS.length >= TF_MAX){ $('#tfNote').textContent = `Najviše ${TF_MAX} timeframe-ova odjednom.`; return; } DIV_TFS.push(tf); }
+      sortTfs(DIV_TFS); LS.set('divTfs', DIV_TFS); renderTfChips();
+    };
+    box.appendChild(b);
+  }
+  $('#tfNote').textContent = `Izabrano: ${DIV_TFS.join(', ')}. Važi od sledećeg skeniranja.`;
+}
 async function klines(sym, interval, limit){
   const r = await api('/v5/market/kline', {category:'linear', symbol:sym, interval, limit});
   return (r.list || []).map(x => ({t:+x[0], o:+x[1], h:+x[2], l:+x[3], c:+x[4]})).reverse();
@@ -395,10 +429,11 @@ async function scan(){
 
     // EWO_LB i divergencije 3–5 na 4h, 1h, 15m i 5m
     const targets = S.divAll >= 1 ? coins : list;
-    setStatus(`EWO i divergencije za ${targets.length} coinova (4h, 1h, 15m, 5m)…`);
+    const tfs = DIV_TFS.slice();
+    setStatus(`EWO i divergencije za ${targets.length} coinova (${tfs.join(', ')})…`);
     await pool(targets, 6, async c => {
       c.k = {}; c.ew = {}; c.div = [];
-      for(const tf of DIV_TFS){
+      for(const tf of tfs){
         const k = await klines(c.sym, TFIV[tf], 300);
         if(k.length < 80) continue;
         const ew = ewoLB(k); c.k[tf] = k; c.ew[tf] = ew;
@@ -413,7 +448,7 @@ async function scan(){
     for(const k2 of Object.keys(seen)) if(nowT - seen[k2] > 3*864e5) delete seen[k2];
     LS.set('seenDiv', seen);
 
-    R = {at: new Date(), thr, coins, rej, fresh, sets: {lista: list, div: divCoins, oiUp, oiDown, gain, loss, svi: coins}};
+    R = {at: new Date(), thr, coins, rej, fresh, tfs, sets: {lista: list, div: divCoins, oiUp, oiDown, gain, loss, svi: coins}};
     if(fresh.length) beep();
     render();
     setStatus(`Skenirano u ${R.at.toLocaleTimeString('sr-RS', {hour:'2-digit', minute:'2-digit'})}. Likvidnih ${coins.length}, prag OI ${thr}%.`);
@@ -505,7 +540,7 @@ const TF_PICK = {};                                     // izabrani TF za mini g
 const DIR_TXT = {bear:'Medveđa divergencija (kraj talasa 5 nagore)', bull:'Bikovska divergencija (kraj talasa 5 nadole)'};
 function ewoBlock(c){
   const tf = TF_PICK[c.sym] || (c.div.length ? c.div[0].tf : '1h');
-  const btns = DIV_TFS.filter(t => c.ew[t]).map(t => {
+  const btns = R.tfs.filter(t => c.ew[t]).map(t => {
     const v = c.ew[t][c.ew[t].length-1], d = c.div.find(x => x.tf === t);
     return `<button class="tfb" data-sym="${esc(c.sym)}" data-tf="${t}" aria-pressed="${t === tf}">${t}${d ? (d.dir === 'bear' ? ' ↓' : ' ↑') : ''}<b class="${cls(v)}">${esc(fp(v))}</b></button>`;
   }).join('');
@@ -545,7 +580,15 @@ function render(){
     [R.coins.length, 'likvidnih USDT.P'], [R.thr + '%', 'prag OI 4h'], [R.sets.lista.length, 'na listi za danas'], [rejTotal, 'odbijeno']
   ].map(([v, l]) => `<div><b>${esc(v)}</b><span>${esc(l)}</span></div>`).join('');
   $('#rejInfo').textContent = `Odbijeno: likvidnost ${R.rej.likvidnost}, mlađi od ${S.minAgeDays} dana ${R.rej.novi}, delisting ${R.rej.delisting}, ručno ${R.rej.iskljuceno}. OI i promet su samo sa Bybita.`;
-  $('#fresh').innerHTML = R.fresh && R.fresh.length ? `<b>Nove divergencije (${R.fresh.length}):</b> ` + R.fresh.map(f => `${esc(f.c.sym)}.P ${f.d.tf} ${f.d.dir === 'bear' ? '↓' : '↑'}`).join(' · ') : '';
+  $('#fresh').innerHTML = R.fresh && R.fresh.length
+    ? `<b>Nove divergencije (${R.fresh.length})</b>` + R.tfs.filter(tf => R.fresh.some(f => f.d.tf === tf)).map(tf =>
+        `<div class="ftf"><span class="pill warn">${esc(tf)}</span> ${R.fresh.filter(f => f.d.tf === tf).map(f => `<a href="${esc(tvLink(f.c.sym))}" target="${tvTarget()}" rel="noopener">${esc(f.c.sym)}.P</a> ${f.d.dir === 'bear' ? '↓' : '↑'}`).join(' · ')}</div>`).join('')
+    : '';
+  // sve aktivne divergencije po TF-u (i one koje nisu nove)
+  const byTf = R.tfs.map(tf => [tf, R.sets.div.flatMap(c => c.div.filter(d => d.tf === tf).map(d => ({c, d})))]);
+  $('#divTf').innerHTML = R.sets.div.length ? byTf.map(([tf, arr]) => `<div class="dtrow"><b>${esc(tf)}</b><span>${arr.length
+      ? arr.map(x => `<a href="${esc(tvLink(x.c.sym))}" target="${tvTarget()}" rel="noopener">${esc(x.c.sym)}.P</a> <span class="${x.d.dir === 'bear' ? 'neg' : 'pos'}">${x.d.dir === 'bear' ? '↓' : '↑'}</span>`).join(' · ')
+      : '<span class="muted">nema</span>'}</span></div>`).join('') : '<div class="muted small">Nema aktivnih divergencija.</div>';
   const list = current();
   $('#list').innerHTML = list.length ? list.map(card).join('') : '<div class="empty">Nema coinova u ovoj grupi.</div>';
 }
@@ -575,7 +618,7 @@ const autoSel = $('#autoScan'); autoSel.value = String(LS.get('auto', 0));
 function setAuto(){ clearInterval(autoTimer); const m = +autoSel.value; LS.set('auto', m); if(m > 0) autoTimer = setInterval(scan, m*60e3); }
 autoSel.addEventListener('change', setAuto);
 $('#scanBtn').onclick = scan;
-applyTheme(); renderSettings(); renderFilters(); setAuto(); detectApi();
+applyTheme(); renderSettings(); renderFilters(); renderTfChips(); setAuto(); detectApi();
 </script>
 </body>
 </html>

@@ -10,7 +10,7 @@ Skener za korake 3 i 4 rutine pre sesije: likvidnost i aktivnost na Bybit USDT p
   - Najveći rast i pad za 24h.
 - **Lista za danas:** do 15 coinova po |pravom OI|, uz najveći rast i pad i coinove iz „Uvek na listi“.
 - **Tumačenje za 4h:** novi longovi, novi shortovi, zatvaranje shortova ili zatvaranje longova. Funding je preračunat na 8h, a ekstreman funding je označen.
-- **EWO_LB (LazyBear, EMA 5 − EMA 35)** na 4h, 1h, 15m i 5m, sa mini grafikom cene i EWO-a.
+- **EWO_LB (LazyBear, EMA 5 − EMA 35)** na izabranim TF-ovima (do 6 od 1m do 1D, podrazumevano 4h, 1h, 15m i 5m), sa mini grafikom cene i EWO-a. Divergencije i upozorenja su prikazani posebno za svaki TF.
 - **Divergencija talasa 3 i 5:** najjači EWO je talas 3, EWO se vrati do nule (talas 4), a cena napravi nov vrh ili dno uz niži EWO (talas 5). Prijavljuje samo divergencije iz poslednjih 12 sveća gde je EWO talasa 5 najviše 90% vrha talasa 3.
 - **Upozorenje dok je skener otvoren:** zvuk, vibracija i traka „Nove divergencije“. Radi samo dok je stranica otvorena.
 - **Kopiraj za TradingView:** lista u obliku `BYBIT:SOLUSDT.P,BYBIT:ETHUSDT.P,...`.
