@@ -24,6 +24,7 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{margin:0;background:var(--bg);color:var(--text)}
 body{font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
 .num,.m b{font-variant-numeric:tabular-nums}
@@ -135,6 +136,14 @@ textarea.copy{width:100%;min-height:70px;margin-top:8px;font:12px ui-monospace,M
       <span class="small muted" id="copyInfo"></span>
     </div>
     <textarea class="copy" id="copyBox" hidden readonly aria-label="Lista za TradingView"></textarea>
+    <div class="row" id="tvModeRow" style="margin-top:10px" hidden>
+      <label class="small muted" for="tvMode">TradingView otvara</label>
+      <select id="tvMode">
+        <option value="app-chart">Aplikacija: grafik</option>
+        <option value="app-symbol">Aplikacija: stranica para</option>
+        <option value="web">Browser</option>
+      </select>
+    </div>
     <div class="coins" id="list"><div class="empty">Još nije skenirano.</div></div>
     <p class="small muted" style="margin:12px 0 0">Pravi OI = promena OI − promena cene, za 4h. Tumačenje gleda smer cene i OI za 4h: novi longovi, novi shortovi, zatvaranje shortova ili zatvaranje longova.</p>
   </section>
@@ -340,7 +349,18 @@ const fpc = (x, d=1) => x == null || !isFinite(x) ? '–' : (x > 0 ? '+' : '') +
 const cls = x => x == null ? '' : x > 0 ? 'pos' : x < 0 ? 'neg' : '';
 const fm = x => x >= 1e9 ? (x/1e9).toFixed(2) + 'B' : x >= 1e6 ? (x/1e6).toFixed(1) + 'M' : (x/1e3).toFixed(0) + 'K';
 const tvSym = s => `BYBIT:${s}.P`;
-const tvLink = s => `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSym(s))}`;
+/* TradingView: na Androidu intent link otvara aplikaciju; ako ne uspe, ide na browser_fallback_url (web). */
+const IS_ANDROID = /Android/i.test(navigator.userAgent);
+const TV_PKG = 'com.tradingview.tradingviewapp';
+let tvMode = LS.get('tvMode', IS_ANDROID ? 'app-chart' : 'web');
+const tvWebChart = s => `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSym(s))}`;
+const tvWebSymbol = s => `https://www.tradingview.com/symbols/BYBIT-${encodeURIComponent(s)}.P/`;
+const tvIntent = web => `intent://${web.replace(/^https:\/\//, '')}#Intent;scheme=https;package=${TV_PKG};S.browser_fallback_url=${encodeURIComponent(web)};end`;
+function tvLink(s){
+  if(!IS_ANDROID || tvMode === 'web') return tvWebChart(s);
+  return tvIntent(tvMode === 'app-symbol' ? tvWebSymbol(s) : tvWebChart(s));
+}
+const tvTarget = () => (IS_ANDROID && tvMode !== 'web') ? '_self' : '_blank';
 const bbLink = s => `https://www.bybit.com/trade/usdt/${encodeURIComponent(s)}`;
 
 function interp(c){                                    // smer cene i OI za 4h
@@ -370,7 +390,7 @@ function card(c){
   const m = (l, v, cl='', key=false) => `<div class="${key ? 'key' : ''}"><span>${l}</span><b class="${cl}">${v}</b></div>`;
   return `<div class="coin">
     <div class="top">
-      <a class="sym" href="${tvLink(c.sym)}" target="_blank" rel="noopener">${esc(c.sym)}.P</a>
+      <a class="sym" href="${esc(tvLink(c.sym))}" target="${tvTarget()}" rel="noopener">${esc(c.sym)}.P</a>
       <span class="pill ${ic}">${esc(it)}</span>
       ${ext ? '<span class="pill warn">ekstreman funding</span>' : ''}
     </div>
@@ -385,7 +405,7 @@ function card(c){
       ${m('OI $', fm(c.oiv))}
       ${m('Promet 24h', fm(c.turn))}
     </div>
-    <div class="links"><a href="${tvLink(c.sym)}" target="_blank" rel="noopener">TradingView</a><a href="${bbLink(c.sym)}" target="_blank" rel="noopener">Bybit</a></div>
+    <div class="links"><a href="${esc(tvLink(c.sym))}" target="${tvTarget()}" rel="noopener">TradingView</a><a href="${bbLink(c.sym)}" target="_blank" rel="noopener">Bybit</a></div>
   </div>`;
 }
 function render(){
@@ -412,6 +432,13 @@ $('#copyTv').onclick = () => {
     navigator.clipboard.writeText(text).then(() => { $('#copyInfo').textContent = `Kopirano ${list.length} simbola. Nalepi u TradingView watchlist (polje za dodavanje simbola).`; }, fallback);
   }catch(e){ fallback(); }
 };
+
+/* ---------- izbor TradingView linka (samo Android) ---------- */
+if(IS_ANDROID){
+  $('#tvModeRow').hidden = false;
+  $('#tvMode').value = tvMode;
+  $('#tvMode').addEventListener('change', e => { tvMode = e.target.value; LS.set('tvMode', tvMode); render(); });
+}
 
 /* ---------- start ---------- */
 let autoTimer = null;
